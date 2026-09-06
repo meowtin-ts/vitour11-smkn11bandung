@@ -1,0 +1,61 @@
+/*
+ * Global CSS Styles
+ * Add global styles that apply to the entire application
+ *
+ * Note: Most styling is done via Tailwind CSS v4
+ * Only add global styles here if absolutely necessary
+ */
+
+/* ========================================
+ * Virtual Tour Hotspot Animations
+ * ======================================== */
+
+/* Pulse animation untuk hotspot icons */
+@keyframes hotspot-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.5);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+/* Hotspot container styles */
+.hotspot-scene,
+.hotspot-info {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+}
+
+/* Ensure hotspot icons are always visible and clickable */
+.pnlm-hotspot {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+/* Fullscreen denah image */
+.denah-fullscreen-container:fullscreen,
+.denah-fullscreen-container:-webkit-full-screen,
+.denah-fullscreen-container:-moz-full-screen {
+  width: 100vw !important;
+  height: 100vh !important;
+  background: #000;
+}
+
+/* Hotspot icon container hover effect */
+.hotspot-icon-container:hover {
+  transform: scale(1.15) !important;
+}
+
+.hotspot-icon-container:active {
+  transform: scale(0.95) !important;
+}

@@ -1,0 +1,31 @@
+@import 'tailwindcss' source(none);
+@source '../**/*.{js,ts,jsx,tsx}';
+
+@import 'tw-animate-css';
+
+/* Smooth scroll behavior */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Dark mode scrollbar */
+html.dark {
+  color-scheme: dark;
+}
+
+html.dark::-webkit-scrollbar {
+  width: 12px;
+}
+
+html.dark::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+
+html.dark::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 6px;
+}
+
+html.dark::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
