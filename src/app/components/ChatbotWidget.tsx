@@ -6,8 +6,8 @@ import {
   Paperclip, Square, Clock, Check, ChevronLeft,
 } from "lucide-react";
 import { useDarkMode } from "../contexts/DarkModeContext";
-import chibiImg from "../../imports/maskot_chibi.png";
 import robotImg from "../../imports/robot.png";
+import takagiImg from "../../imports/takagi_ai_assistant.jpeg";
 
 // ── Types ─────────────────────────────────────────────────────────────────
 interface Message {
@@ -24,11 +24,11 @@ interface Session {
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────
-const STORAGE_KEY = "atinn_sessions";
+const STORAGE_KEY = "Takagi_sessions";
 
 const INITIAL_MSG: Message = {
   role: "assistant",
-  content: "Halo! Saya Atinn 👋 Ada yang ingin kamu tanyakan tentang pendidikan atau SMKN 11 Bandung?",
+  content: "Selamat datang di Virtual Tour SMKN 11 Bandung! Saya Takagi 😊. Silakan tanyakan hal seputar sekolah atau informasi pendidikan di sini😉",
 };
 
 const QUICK_REPLIES = [
@@ -38,25 +38,84 @@ const QUICK_REPLIES = [
   "Info ekstrakurikuler",
 ];
 
-const SYSTEM_PROMPT = `Kamu adalah asisten virtual cerdas bernama "Atinn" dari SMKN 11 Bandung.
+const SYSTEM_PROMPT = `Kamu adalah asisten virtual cerdas bernama "Takagi" dari SMKN 11 Bandung.
 
 PANDUAN:
 1. Kamu bisa menjawab pertanyaan apa saja — sains, teknologi, sejarah, budaya, coding, karier, matematika, bahasa, dan topik umum lainnya — dengan jawaban yang akurat, terampil, dan informatif.
 2. Selalu gunakan bahasa Indonesia yang ramah, sopan, dan mudah dipahami.
-3. Jika relevan, sisipkan kaitan dengan SMKN 11 Bandung dalam jawabanmu secara natural. Contoh: jika ditanya tentang teknologi, kamu bisa menyebut bahwa SMKN 11 Bandung memiliki program keahlian di bidang tersebut.
-4. Untuk pertanyaan langsung tentang SMKN 11 Bandung, utamakan informasi sekolah di bawah ini.
-5. Jaga jawaban tetap ringkas dan padat, hindari terlalu panjang.
+3. Jika relevan, sisipkan kaitan dengan SMKN 11 Bandung dalam jawabanmu secara natural.
+4. Untuk pertanyaan langsung tentang SMKN 11 Bandung, gunakan data lengkap di bawah ini sebagai referensi utama.
+5. Jaga jawaban tetap jelas dan padat. Jangan terlalu panjang, tapi jangan terlalu singkat jika pertanyaannya membutuhkan penjelasan.
 6. Jangan pernah menolak pertanyaan — jawab semua dengan sebaik-baiknya.
 
-Info SMKN 11 Bandung:
+=== DATA SMKN 11 BANDUNG ===
+
+IDENTITAS SEKOLAH:
 - Nama lengkap: SMK Negeri 11 Bandung
-- Lokasi: Jl. Budhi, Ciumbuleuit, Kec. Cidadap, Kota Bandung, Jawa Barat 40142
-- Program keahlian: bidang teknologi dan rekayasa
-- Fasilitas: laboratorium komputer, ruang praktek, perpustakaan, dan fasilitas lengkap lainnya
-- Website virtual tour: Vitour 11 / Jelajah SMKN 11 Bandung`;
+- NPSN: 20219175
+- Alamat: Jl. Budhi Cilember, Kelurahan Sukaraja, Kecamatan Cicendo, Kota Bandung (dekat jembatan Cimindi, berbatasan dengan Cimahi)
+- Telepon: (022) 6652442
+- Email: smkn11bdg@gmail.com
+- Website resmi: smkn11bdg.sch.id
+- Instagram: @info.smkn11bandung
+- Website virtual tour: Vitour 11 / Jelajah SMKN 11 Bandung
+- Kepala Sekolah: Eka Rachman, S.Kom., M.M.Pd.
+- Kurikulum: Kurikulum Merdeka
+
+STATUS & KEUNGGULAN:
+- Sekolah Pusat Keunggulan (SMK PK) ditetapkan oleh Kemendikbudristek RI
+- Salah satu dari 35 SMK di Jawa Barat berstatus BLUD (Badan Layanan Usaha Daerah), memungkinkan Teaching Factory (TEFA) mandiri
+- Program unggulan: Sekolah Pencetak Wirausaha (SPW) dan kemitraan industri yang kuat
+
+SEJARAH SINGKAT:
+Awalnya berfokus pada Bisnis dan Manajemen (SMEA). Pada Juni 2003 membuka program teknologi pertama yaitu Rekayasa Perangkat Lunak (kini PPLG). Sempat dinominasikan sebagai RSBI pada 2007, kini berkembang menjadi Sekolah Pusat Keunggulan berbasis teknologi digital dan manajemen bisnis.
+
+VISI & MISI:
+Membentuk murid berakhlak mulia dan empatik melalui penguatan nilai Pancawaluya. Menyelenggarakan pembelajaran berbasis proyek (project-based learning), pemecahan masalah, dan adopsi teknologi modern.
+
+PROGRAM KEAHLIAN (7 JURUSAN):
+1. PPLG – Pengembangan Perangkat Lunak dan Gim
+   Fokus: pemrograman web, mobile, dan pengembangan game. Siswa mampu merancang, menganalisis, membuat, dan memelihara sistem informasi.
+
+2. TJKT – Teknik Jaringan Komputer dan Telekomunikasi
+   Fokus: perencanaan, instalasi, konfigurasi, dan perbaikan perangkat PC serta infrastruktur jaringan komputer dan telekomunikasi.
+
+3. DKV – Desain Komunikasi Visual
+   Fokus: kreativitas visual, grafis, multimedia, periklanan, dan komunikasi digital. Berada di bawah bidang Seni dan Ekonomi Kreatif.
+
+4. AKL – Akuntansi dan Keuangan Lembaga
+   Fokus: pengelolaan keuangan, etika profesi akuntan, proses bisnis. Ada TEFA berupa layanan pembukuan dan aplikasi keuangan bagi UMKM.
+
+5. MPLB – Manajemen Perkantoran dan Layanan Bisnis
+   Fokus: administrasi perkantoran modern, manajemen dokumen, komunikasi bisnis, pelayanan prima, teknologi perkantoran.
+
+6. Manajemen Logistik
+   Fokus: rantai pasok (supply chain), pergudangan industri, distribusi barang, administrasi dokumen logistik domestik dan internasional.
+
+7. BDP – Bisnis Daring dan Pemasaran (Bisnis Ritel/Pemasaran)
+   Fokus: strategi pemasaran produk, bisnis ritel modern, transaksi digital, e-commerce, dan digital marketing.
+
+FASILITAS:
+- Umum: Masjid sekolah, Aula Terbuka, Ruang Meeting, Ruang Kesiswaan, Lapangan Olahraga, Ruang Tata Usaha, Ruang Manajemen
+- Praktik: Laboratorium Komputer, Ruang Seni, Workshop/Lab Praktik khusus tiap program keahlian
+
+EKSTRAKURIKULER:
+- Organisasi: Polisi Siswa (Polsis), Paskibra, Pramuka, PMR
+- Keagamaan: IRMA FORMULAS (Ikatan Remaja Masjid)
+- Olahraga: Futsal, Basket, Voli, Taekwondo, Pencak Silat
+- Seni & Bahasa: Band, Rampak Gendang, Paduan Suara, Tari Tradisional, Tari Modern, Komunitas Bahasa Jepang
+
+JAM & HARI SEKOLAH:
+- Hari aktif: Senin – Jumat (5 hari kerja)
+- Jam masuk: 07.00 WIB (full day school sesuai regulasi Jawa Barat)
+
+PENDAFTARAN / PPDB:
+- Jalur masuk: Afirmasi, Prioritas Terdekat, Perpindahan Tugas Orang Tua/Anak Guru, Prestasi (Nilai Rapor/Kejuaraan), Kelas Industri
+- Syarat umum: Lulus SMP/MTs sederajat, usia maks. 21 tahun, dokumen (Ijazah/SKL, Akta Kelahiran, KK, Rapor Semester 1–5)
+- Jadwal: Biasanya dua tahap pada bulan Juni melalui portal resmi PPDB Jabar`;
 
 const API_URL =
-  "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent";
+  "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent";
 
 // ── localStorage helpers ───────────────────────────────────────────────────
 function loadSessions(): Session[] {
@@ -285,9 +344,9 @@ export function ChatbotWidget() {
                 : "bg-gradient-to-r from-blue-600 to-cyan-500 border-blue-500"
             }`}>
               <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-white/40 flex-shrink-0 bg-white/10">
-                <img src={chibiImg} alt="Atinn" className="w-full h-full object-contain" />
+                <img src={takagiImg} alt="Takagi" className="w-full h-full object-cover" />
               </div>
-              <p className="text-white font-bold text-sm flex-1">Atinn</p>
+              <p className="text-white font-bold text-sm flex-1">Takagi</p>
               <button onClick={() => setShowHistory((v) => !v)} title="Riwayat Chat" className={btn}>
                 <Clock size={15} />
               </button>
@@ -361,7 +420,7 @@ export function ChatbotWidget() {
                 <div key={i} className={`group flex gap-2 ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}`}>
                   {msg.role === "assistant" && (
                     <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0 bg-white border border-blue-200 mt-0.5">
-                      <img src={chibiImg} alt="Atinn" className="w-full h-full object-contain" />
+                      <img src={takagiImg} alt="Takagi" className="w-full h-full object-cover" />
                     </div>
                   )}
                   <div className={`flex flex-col gap-1 ${msg.role === "user" ? "items-end" : "items-start"} max-w-[78%]`}>
@@ -406,7 +465,7 @@ export function ChatbotWidget() {
               {isLoading && (
                 <div className="flex gap-2 items-center">
                   <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0 bg-white border border-blue-200">
-                    <img src={chibiImg} alt="Atinn" className="w-full h-full object-contain" />
+                    <img src={takagiImg} alt="Takagi" className="w-full h-full object-cover" />
                   </div>
                   <div className={`px-4 py-3 rounded-2xl rounded-tl-sm ${isDarkMode ? "bg-slate-800" : "bg-slate-100"}`}>
                     <div className="flex gap-1">
@@ -538,7 +597,7 @@ export function ChatbotWidget() {
         whileTap={{ scale: 0.92 }}
         className="fixed bottom-4 right-4 sm:right-6 z-[9999] w-14 h-14 focus:outline-none"
         style={{ background: "none", border: "none", padding: 0 }}
-        title="Chat dengan Atinn"
+        title="Chat dengan Takagi"
       >
         <AnimatePresence mode="wait">
           {isOpen ? (
@@ -568,7 +627,7 @@ export function ChatbotWidget() {
             >
               <img
                 src={robotImg}
-                alt="Chat dengan Atinn"
+                alt="Chat dengan Takagi"
                 className="w-full h-full object-contain"
                 style={{ filter: "drop-shadow(0 4px 14px rgba(59,130,246,0.45))" }}
               />
