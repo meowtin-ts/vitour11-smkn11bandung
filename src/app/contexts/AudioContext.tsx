@@ -13,7 +13,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   const hasAttemptedAutoPlay = useRef(false);
 
   // CARA 1: Jika file MP3 ada di folder /public/raindance.mp3
-  const audioUrl = "/public/CraveYou.mp3";
+  const audioUrl = "/CraveYou.mp3";
   
   // CARA 2: Jika masih pakai link online (hapus jika sudah pakai file lokal)
   // const audioUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3";
