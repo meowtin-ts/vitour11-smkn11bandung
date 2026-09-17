@@ -28,7 +28,7 @@ const STORAGE_KEY = "Takagi_sessions";
 
 const INITIAL_MSG: Message = {
   role: "assistant",
-  content: "Selamat datang di Virtual Tour SMKN 11 Bandung! Saya Takagi 😊. Silakan tanyakan hal seputar sekolah atau informasi pendidikan di sini😉",
+  content: "Selamat datang di Virtual Tour SMKN 11 Bandung! Saya Takagi 😊. Silakan tanyakan hal seputar sekolah ini atau informasi pendidikan di sini😉",
 };
 
 const QUICK_REPLIES = [
