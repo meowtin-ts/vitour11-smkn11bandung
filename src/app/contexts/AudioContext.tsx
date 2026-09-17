@@ -12,20 +12,29 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const hasAttemptedAutoPlay = useRef(false);
 
-  // CARA 1: Jika file MP3 ada di folder /public/raindance.mp3
   const audioUrl = "/CraveYou.mp3";
-  
-  // CARA 2: Jika masih pakai link online (hapus jika sudah pakai file lokal)
-  // const audioUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3";
 
-  // Auto-play after splash screen (3.5 seconds)
+  // Auto-play on first user interaction (required by browser autoplay policy)
   useEffect(() => {
-    if (!hasAttemptedAutoPlay.current) {
-      hasAttemptedAutoPlay.current = true;
-      setTimeout(() => {
+    const handleFirstInteraction = () => {
+      if (!hasAttemptedAutoPlay.current) {
+        hasAttemptedAutoPlay.current = true;
         setIsPlaying(true);
-      }, 3500);
-    }
+      }
+      document.removeEventListener("click", handleFirstInteraction);
+      document.removeEventListener("keydown", handleFirstInteraction);
+      document.removeEventListener("touchstart", handleFirstInteraction);
+    };
+
+    document.addEventListener("click", handleFirstInteraction);
+    document.addEventListener("keydown", handleFirstInteraction);
+    document.addEventListener("touchstart", handleFirstInteraction);
+
+    return () => {
+      document.removeEventListener("click", handleFirstInteraction);
+      document.removeEventListener("keydown", handleFirstInteraction);
+      document.removeEventListener("touchstart", handleFirstInteraction);
+    };
   }, []);
 
   // Handle play/pause
