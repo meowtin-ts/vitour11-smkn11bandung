@@ -83,6 +83,7 @@ export function PanoramaPreview({
         mouseZoom: true,
         draggable: true,
         disableKeyboardCtrl: false,
+        dynamicUpdate: false,
         pitch: initialView?.pitch || 0,
         yaw: initialView?.yaw || 0,
         hfov: initialView?.hfov || 100,
@@ -158,7 +159,7 @@ export function PanoramaPreview({
       console.error("Panorama preview initialization error:", error);
       toast.error("Gagal memuat preview panorama");
     }
-  }, [panoramaUrl, panoramaRef, pannellumLoaded, hotspots, debugMode, initialView, onAddHotspot]);
+  }, [panoramaUrl, pannellumLoaded, debugMode]);
 
   const handleAddHotspotAtCenter = () => {
     if (viewerRef.current) {

@@ -60,6 +60,7 @@ export function VirtualTourPage() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const panoramaRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<any>(null);
+  const toursRef = useRef<VirtualTour[]>([]);
 
   // Check if coming from admin dashboard
   const fromAdmin = location.state?.from === 'admin';
@@ -77,7 +78,11 @@ export function VirtualTourPage() {
 
   useEffect(() => {
     if (currentTour && panoramaRef.current && pannellumLoaded) {
-      initPannellum();
+      // Small delay to ensure container has stable dimensions
+      const timer = setTimeout(() => {
+        initPannellum();
+      }, 50);
+      return () => clearTimeout(timer);
     }
 
     return () => {
@@ -89,7 +94,7 @@ export function VirtualTourPage() {
         }
       }
     };
-  }, [currentTour, pannellumLoaded]);
+  }, [currentTour?.id, pannellumLoaded]);
 
   const fetchTours = async () => {
     try {
@@ -136,6 +141,7 @@ export function VirtualTourPage() {
         updatedAt: row.updated_at,
       }));
 
+      toursRef.current = mappedTours;
       setTours(mappedTours);
       setCurrentTour(mappedTours[0]);
       console.log("✅ Loaded", mappedTours.length, "panoramas for virtual tour");
@@ -158,10 +164,15 @@ export function VirtualTourPage() {
   };
 
   const loadScene = (targetId: string) => {
-    const targetTour = tours.find((t) => t.id === targetId);
+    // Always read from ref to avoid stale closure issues
+    const allTours = toursRef.current;
+    const targetTour = allTours.find((t) => t.id === targetId);
     if (targetTour) {
+      console.log("🔄 Navigating to:", targetTour.name, "(ID:", targetId, ")");
       setCurrentTour(targetTour);
       setDropdownOpen(false);
+    } else {
+      console.warn("⚠️ Target tour not found for ID:", targetId, ". Available IDs:", allTours.map(t => t.id));
     }
   };
 
@@ -200,103 +211,44 @@ export function VirtualTourPage() {
           cssClass: hs.type === "scene" ? "hotspot-scene" : "hotspot-info",
         };
 
-        // Custom icon rendering dengan SVG
+        // Custom tooltip: append visible icon inside the hotspot div
         hotspotConfig.createTooltipFunc = (hotSpotDiv: HTMLElement) => {
-          // Clear default content
-          hotSpotDiv.innerHTML = '';
+          // Build a clickable icon wrapper
+          const wrapper = document.createElement('div');
+          wrapper.style.cssText = 'width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(59,130,246,0.92);box-shadow:0 2px 10px rgba(0,0,0,0.35);cursor:pointer;border:2.5px solid rgba(255,255,255,0.85);transition:transform .2s;';
 
-          // Icon container
-          const iconContainer = document.createElement('div');
-          iconContainer.className = 'hotspot-icon-container';
-          iconContainer.style.cssText = `
-            width: 40px;
-            height: 40px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: ${isDarkMode ? 'rgba(59, 130, 246, 0.9)' : 'rgba(59, 130, 246, 0.95)'};
-            border-radius: 50%;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-            transition: all 0.3s ease;
-            border: 3px solid ${isDarkMode ? 'rgba(147, 197, 253, 0.5)' : 'rgba(255, 255, 255, 0.9)'};
-          `;
-
-          // Icon SVG
-          const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-          icon.setAttribute('width', '20');
-          icon.setAttribute('height', '20');
-          icon.setAttribute('viewBox', '0 0 24 24');
-          icon.setAttribute('fill', 'none');
-          icon.setAttribute('stroke', 'white');
-          icon.setAttribute('stroke-width', '2.5');
-          icon.setAttribute('stroke-linecap', 'round');
-          icon.setAttribute('stroke-linejoin', 'round');
+          // SVG icon
+          const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+          svg.setAttribute('width', '18');
+          svg.setAttribute('height', '18');
+          svg.setAttribute('viewBox', '0 0 24 24');
+          svg.setAttribute('fill', 'none');
+          svg.setAttribute('stroke', 'white');
+          svg.setAttribute('stroke-width', '2.5');
+          svg.setAttribute('stroke-linecap', 'round');
+          svg.setAttribute('stroke-linejoin', 'round');
 
           if (hs.type === 'scene') {
-            // MapPin icon untuk scene
-            icon.innerHTML = '<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle>';
+            svg.innerHTML = '<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>';
           } else {
-            // AlertCircle icon untuk info
-            icon.innerHTML = '<circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line>';
+            svg.innerHTML = '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>';
           }
+          wrapper.appendChild(svg);
 
-          iconContainer.appendChild(icon);
-
-          // Tooltip text (muncul saat hover)
+          // Tooltip label on hover
           if (hs.text) {
-            const tooltip = document.createElement('div');
-            tooltip.className = 'hotspot-tooltip-text';
-            tooltip.textContent = hs.text;
-            tooltip.style.cssText = `
-              position: absolute;
-              bottom: 100%;
-              left: 50%;
-              transform: translateX(-50%);
-              margin-bottom: 10px;
-              padding: 8px 12px;
-              background: ${isDarkMode ? 'rgba(30, 41, 59, 0.95)' : 'rgba(15, 23, 42, 0.95)'};
-              color: white;
-              border-radius: 8px;
-              font-size: 14px;
-              white-space: nowrap;
-              opacity: 0;
-              pointer-events: none;
-              transition: opacity 0.3s ease;
-              box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-              z-index: 1000;
-            `;
-            iconContainer.appendChild(tooltip);
-
-            // Show tooltip on hover
-            iconContainer.addEventListener('mouseenter', () => {
-              tooltip.style.opacity = '1';
-              iconContainer.style.transform = 'scale(1.15)';
-            });
-
-            iconContainer.addEventListener('mouseleave', () => {
-              tooltip.style.opacity = '0';
-              iconContainer.style.transform = 'scale(1)';
-            });
+            const label = document.createElement('div');
+            label.textContent = hs.text;
+            label.style.cssText = 'position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);padding:5px 10px;background:rgba(15,23,42,0.92);color:#fff;border-radius:6px;font-size:13px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .2s;';
+            wrapper.appendChild(label);
+            wrapper.addEventListener('mouseenter', () => { label.style.opacity = '1'; wrapper.style.transform = 'scale(1.12)'; });
+            wrapper.addEventListener('mouseleave', () => { label.style.opacity = '0'; wrapper.style.transform = 'scale(1)'; });
           }
 
-          // Pulse animation
-          const pulse = document.createElement('div');
-          pulse.style.cssText = `
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            background: ${isDarkMode ? 'rgba(59, 130, 246, 0.4)' : 'rgba(59, 130, 246, 0.5)'};
-            animation: hotspot-pulse 2s ease-out infinite;
-          `;
-          iconContainer.appendChild(pulse);
-
-          hotSpotDiv.appendChild(iconContainer);
-          hotSpotDiv.style.position = 'relative';
+          hotSpotDiv.appendChild(wrapper);
         };
 
-        // Add click handler
+        // Add click handler using Pannellum's official API
         if (hs.type === "scene" && hs.targetId) {
           hotspotConfig.clickHandlerFunc = () => {
             console.log("🖱️ Scene hotspot clicked! Target:", hs.targetId);
@@ -337,6 +289,7 @@ export function VirtualTourPage() {
         mouseZoom: true,
         draggable: true,
         disableKeyboardCtrl: false,
+        dynamicUpdate: false,
         pitch: currentTour.initialView?.pitch || 0,
         yaw: currentTour.initialView?.yaw || 0,
         hfov: currentTour.initialView?.hfov || 100,
@@ -417,7 +370,17 @@ export function VirtualTourPage() {
   return (
     <div className="fixed inset-0 w-full h-full overflow-hidden">
       {/* Pannellum Container - Full screen */}
-      <div ref={panoramaRef} className="absolute inset-0 w-full h-full" />
+      <div
+        ref={panoramaRef}
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100vw",
+          height: "100vh",
+          overflow: "hidden",
+        }}
+      />
 
       {/* Top Navigation Bar */}
       <div
