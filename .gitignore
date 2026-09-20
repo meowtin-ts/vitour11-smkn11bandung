@@ -1,2 +1,7 @@
 node_modules
 .env
+dist
+dist-ssr
+*.local
+supabase/.temp
+.temp
