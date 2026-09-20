@@ -177,7 +177,7 @@ export function HotspotCanvas({
             {/* Pin Head */}
             <div
               className={`w-7 h-7 border-2 border-white rounded-full rounded-br-none shadow-lg flex items-center justify-center ${
-                hs.type === "scene" ? "bg-green-500" : "bg-blue-500"
+                hs.type === "scene" ? "bg-blue-500" : "bg-green-500"
               }`}
               style={{ transform: "rotate(-45deg)" }}
             >
@@ -234,8 +234,8 @@ export function HotspotCanvas({
                   <td className="px-4 py-2">
                     <span className={`px-2 py-0.5 rounded text-xs font-bold ${
                       hs.type === "scene"
-                        ? "bg-green-500/20 text-green-500"
-                        : "bg-blue-500/20 text-blue-500"
+                        ? "bg-blue-500/20 text-blue-500"
+                        : "bg-green-500/20 text-green-500"
                     }`}>
                       {hs.type}
                     </span>

@@ -213,9 +213,14 @@ export function VirtualTourPage() {
 
         // Custom tooltip: append visible icon inside the hotspot div
         hotspotConfig.createTooltipFunc = (hotSpotDiv: HTMLElement) => {
+          // Color: Scene = Blue, Info = Green
+          const isScene = hs.type === 'scene';
+          const bgColor = isScene ? 'rgba(59,130,246,0.92)' : 'rgba(34,197,94,0.92)';
+          const glowColor = isScene ? 'rgba(59,130,246,0.4)' : 'rgba(34,197,94,0.4)';
+
           // Build a clickable icon wrapper
           const wrapper = document.createElement('div');
-          wrapper.style.cssText = 'width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(59,130,246,0.92);box-shadow:0 2px 10px rgba(0,0,0,0.35);cursor:pointer;border:2.5px solid rgba(255,255,255,0.85);transition:transform .2s;';
+          wrapper.style.cssText = `width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:${bgColor};box-shadow:0 2px 10px ${glowColor};cursor:pointer;border:2.5px solid rgba(255,255,255,0.85);transition:transform .2s;`;
 
           // SVG icon
           const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -228,9 +233,11 @@ export function VirtualTourPage() {
           svg.setAttribute('stroke-linecap', 'round');
           svg.setAttribute('stroke-linejoin', 'round');
 
-          if (hs.type === 'scene') {
+          if (isScene) {
+            // Biru: MapPin icon untuk navigasi antar panorama
             svg.innerHTML = '<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>';
           } else {
+            // Hijau: Compass/Navigation icon untuk info
             svg.innerHTML = '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>';
           }
           wrapper.appendChild(svg);
