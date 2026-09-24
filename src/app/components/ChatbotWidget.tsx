@@ -24,11 +24,11 @@ interface Session {
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────
-const STORAGE_KEY = "Takagi_sessions";
+const STORAGE_KEY = "atinn_sessions";
 
 const INITIAL_MSG: Message = {
   role: "assistant",
-  content: "Selamat datang di Virtual Tour SMKN 11 Bandung! Saya Takagi 😊. Silakan tanyakan hal seputar sekolah ini atau informasi pendidikan di sini😉",
+  content: "Halo! Saya Atinn 👋 Ada yang ingin kamu tanyakan tentang pendidikan atau SMKN 11 Bandung?",
 };
 
 const QUICK_REPLIES = [
@@ -38,15 +38,25 @@ const QUICK_REPLIES = [
   "Info ekstrakurikuler",
 ];
 
-const SYSTEM_PROMPT = `Kamu adalah asisten virtual cerdas bernama "Takagi" dari SMKN 11 Bandung.
+const SYSTEM_PROMPT = `Kamu adalah asisten virtual cerdas dan ramah bernama "Atinn" dari SMKN 11 Bandung.
 
-PANDUAN:
-1. Kamu bisa menjawab pertanyaan apa saja — sains, teknologi, sejarah, budaya, coding, karier, matematika, bahasa, dan topik umum lainnya — dengan jawaban yang akurat, terampil, dan informatif.
-2. Selalu gunakan bahasa Indonesia yang ramah, sopan, dan mudah dipahami.
-3. Jika relevan, sisipkan kaitan dengan SMKN 11 Bandung dalam jawabanmu secara natural.
-4. Untuk pertanyaan langsung tentang SMKN 11 Bandung, gunakan data lengkap di bawah ini sebagai referensi utama.
-5. Jaga jawaban tetap jelas dan padat. Jangan terlalu panjang, tapi jangan terlalu singkat jika pertanyaannya membutuhkan penjelasan.
-6. Jangan pernah menolak pertanyaan — jawab semua dengan sebaik-baiknya.
+KEPRIBADIAN:
+- Hangat, antusias, dan menyenangkan untuk diajak bicara
+- Gunakan emoji yang sesuai untuk membuat percakapan lebih hidup (jangan berlebihan)
+- Ekspresif tapi tetap profesional dan sopan
+
+PANDUAN MENJAWAB:
+1. Kamu bisa menjawab pertanyaan apa saja — sains, teknologi, sejarah, budaya, coding, karier, matematika, bahasa, dan topik umum lainnya — dengan jawaban yang akurat, lengkap, dan informatif.
+2. Selalu gunakan bahasa Indonesia yang ramah dan mudah dipahami.
+3. Gunakan formatting yang rapi:
+   - Gunakan **teks tebal** untuk poin penting
+   - Gunakan bullet point (•) atau nomor untuk daftar
+   - Pisahkan paragraf agar mudah dibaca
+   - Gunakan emoji relevan di awal poin atau judul
+4. Berikan jawaban yang cukup lengkap dan detail — jangan terlalu singkat untuk pertanyaan yang butuh penjelasan.
+5. Jika relevan, sisipkan kaitan dengan SMKN 11 Bandung secara natural di akhir jawaban.
+6. Untuk pertanyaan langsung tentang SMKN 11 Bandung, gunakan data lengkap di bawah ini sebagai referensi utama — jawab selengkap mungkin.
+7. Jangan pernah menolak pertanyaan — jawab semua dengan sebaik-baiknya.
 
 === DATA SMKN 11 BANDUNG ===
 
@@ -114,8 +124,62 @@ PENDAFTARAN / PPDB:
 - Syarat umum: Lulus SMP/MTs sederajat, usia maks. 21 tahun, dokumen (Ijazah/SKL, Akta Kelahiran, KK, Rapor Semester 1–5)
 - Jadwal: Biasanya dua tahap pada bulan Juni melalui portal resmi PPDB Jabar`;
 
-const API_URL =
-  "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent";
+// ── Markdown renderer ─────────────────────────────────────────────────────
+function renderMarkdown(text: string, isUser: boolean) {
+  const lines = text.split("\n");
+  const elements: React.ReactNode[] = [];
+
+  lines.forEach((line, i) => {
+    const key = i;
+
+    // Bold: **text**
+    const parseBold = (str: string): React.ReactNode[] => {
+      const parts = str.split(/(\*\*[^*]+\*\*)/g);
+      return parts.map((p, j) =>
+        p.startsWith("**") && p.endsWith("**")
+          ? <strong key={j}>{p.slice(2, -2)}</strong>
+          : p
+      );
+    };
+
+    // Bullet: lines starting with •, -, *
+    const bulletMatch = line.match(/^[\s]*(•|-|\*)\s+(.+)/);
+    if (bulletMatch) {
+      elements.push(
+        <div key={key} className="flex gap-1.5 my-0.5">
+          <span className="mt-0.5 shrink-0">{isUser ? "•" : "•"}</span>
+          <span>{parseBold(bulletMatch[2])}</span>
+        </div>
+      );
+      return;
+    }
+
+    // Numbered list: 1. text
+    const numMatch = line.match(/^(\d+)\.\s+(.+)/);
+    if (numMatch) {
+      elements.push(
+        <div key={key} className="flex gap-1.5 my-0.5">
+          <span className="shrink-0 font-semibold">{numMatch[1]}.</span>
+          <span>{parseBold(numMatch[2])}</span>
+        </div>
+      );
+      return;
+    }
+
+    // Empty line → spacer
+    if (line.trim() === "") {
+      elements.push(<div key={key} className="h-1.5" />);
+      return;
+    }
+
+    // Regular line
+    elements.push(<div key={key}>{parseBold(line)}</div>);
+  });
+
+  return elements;
+}
+
+const API_URL = "/api/chat";
 
 // ── localStorage helpers ───────────────────────────────────────────────────
 function loadSessions(): Session[] {
@@ -145,7 +209,6 @@ export function ChatbotWidget() {
   const abortRef = useRef<AbortController | null>(null);
   const sessionIdRef = useRef(Date.now().toString());
 
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY as string | undefined;
 
   // Focus input on open
   useEffect(() => {
@@ -237,12 +300,6 @@ export function ChatbotWidget() {
     setAttachment(null);
     setIsLoading(true);
 
-    if (!apiKey) {
-      setMessages([...next, { role: "assistant", content: "⚠️ API key Gemini belum dikonfigurasi. Tambahkan VITE_GEMINI_API_KEY di file .env" }]);
-      setIsLoading(false);
-      return;
-    }
-
     const controller = new AbortController();
     abortRef.current = controller;
 
@@ -259,23 +316,29 @@ export function ChatbotWidget() {
       if (text) newParts.push({ text });
       if (img) newParts.push({ inlineData: { mimeType: img.mime, data: img.base64 } });
 
-      const res = await fetch(`${API_URL}?key=${apiKey}`, {
+      const res = await fetch(API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         signal: controller.signal,
         body: JSON.stringify({
           system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
           contents: [...history, { role: "user", parts: newParts }],
-          generationConfig: { temperature: 0.7, maxOutputTokens: 512 },
+          generationConfig: { temperature: 0.75, maxOutputTokens: 1024 },
         }),
       });
 
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err?.error?.message || "Request gagal");
+      const rawText = await res.text();
+      let data: any;
+      try {
+        data = JSON.parse(rawText);
+      } catch {
+        throw new Error("Response tidak valid dari server");
       }
 
-      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.error?.message || data?.error || "Request gagal");
+      }
+
       const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || "Maaf, tidak ada respons. Coba lagi.";
       setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
     } catch (err) {
@@ -344,9 +407,9 @@ export function ChatbotWidget() {
                 : "bg-gradient-to-r from-blue-600 to-cyan-500 border-blue-500"
             }`}>
               <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-white/40 flex-shrink-0 bg-white/10">
-                <img src={takagiImg} alt="Takagi" className="w-full h-full object-cover" />
+                <img src={takagiImg} alt="Atinn" className="w-full h-full object-cover" />
               </div>
-              <p className="text-white font-bold text-sm flex-1">Takagi</p>
+              <p className="text-white font-bold text-sm flex-1">Atinn</p>
               <button onClick={() => setShowHistory((v) => !v)} title="Riwayat Chat" className={btn}>
                 <Clock size={15} />
               </button>
@@ -420,7 +483,7 @@ export function ChatbotWidget() {
                 <div key={i} className={`group flex gap-2 ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}`}>
                   {msg.role === "assistant" && (
                     <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0 bg-white border border-blue-200 mt-0.5">
-                      <img src={takagiImg} alt="Takagi" className="w-full h-full object-cover" />
+                      <img src={takagiImg} alt="Atinn" className="w-full h-full object-cover" />
                     </div>
                   )}
                   <div className={`flex flex-col gap-1 ${msg.role === "user" ? "items-end" : "items-start"} max-w-[78%]`}>
@@ -432,14 +495,14 @@ export function ChatbotWidget() {
                       />
                     )}
                     {msg.content && (
-                      <div className={`px-3 py-2 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
+                      <div className={`px-3 py-2 rounded-2xl text-sm leading-relaxed ${
                         msg.role === "user"
                           ? "bg-blue-500 text-white rounded-tr-sm"
                           : isDarkMode
                           ? "bg-slate-800 text-slate-100 rounded-tl-sm"
                           : "bg-slate-100 text-slate-800 rounded-tl-sm"
                       }`}>
-                        {msg.content}
+                        {renderMarkdown(msg.content, msg.role === "user")}
                       </div>
                     )}
                     {/* Copy & Regenerate — visible on hover */}
@@ -465,7 +528,7 @@ export function ChatbotWidget() {
               {isLoading && (
                 <div className="flex gap-2 items-center">
                   <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0 bg-white border border-blue-200">
-                    <img src={takagiImg} alt="Takagi" className="w-full h-full object-cover" />
+                    <img src={takagiImg} alt="Atinn" className="w-full h-full object-cover" />
                   </div>
                   <div className={`px-4 py-3 rounded-2xl rounded-tl-sm ${isDarkMode ? "bg-slate-800" : "bg-slate-100"}`}>
                     <div className="flex gap-1">
@@ -597,7 +660,7 @@ export function ChatbotWidget() {
         whileTap={{ scale: 0.92 }}
         className="fixed bottom-4 right-4 sm:right-6 z-[9999] w-14 h-14 focus:outline-none"
         style={{ background: "none", border: "none", padding: 0 }}
-        title="Chat dengan Takagi"
+        title="Chat dengan Atinn"
       >
         <AnimatePresence mode="wait">
           {isOpen ? (
@@ -627,7 +690,7 @@ export function ChatbotWidget() {
             >
               <img
                 src={robotImg}
-                alt="Chat dengan Takagi"
+                alt="Chat dengan Atinn"
                 className="w-full h-full object-contain"
                 style={{ filter: "drop-shadow(0 4px 14px rgba(59,130,246,0.45))" }}
               />
