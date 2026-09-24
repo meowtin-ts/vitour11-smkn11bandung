@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Menu, X, Moon, Sun, ChevronDown } from "lucide-react";
+import { Menu, X, Moon, Sun } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { twMerge } from "tailwind-merge";
 import { useDarkMode } from "../contexts/DarkModeContext";
@@ -11,7 +11,6 @@ export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<string>("#hero");
-  const [saranaDropdownOpen, setPrasaranaDropdownOpen] = useState(false);
   const { isDarkMode, toggleDarkMode } = useDarkMode();
   const location = useLocation();
   const navigate = useNavigate();
@@ -38,7 +37,7 @@ export function Navbar() {
   useEffect(() => {
     if (!isHomePage) return;
 
-    const sectionIds = ["hero", "about", "facilities", "location"];
+    const sectionIds = ["hero", "about", "location"];
     const NAV_OFFSET = 90;
 
     const detectActiveSection = () => {
@@ -58,11 +57,6 @@ export function Navbar() {
     window.addEventListener("scroll", detectActiveSection, { passive: true });
     return () => window.removeEventListener("scroll", detectActiveSection);
   }, [isHomePage]);
-
-  const saranaSubmenu = [
-    { name: "Virtual Tour 360°", href: "/virtual-tour", external: false },
-    { name: "Denah Interaktif", href: "/denah-interaktif", external: false },
-  ];
 
   const navigateToTop = () => {
     if (isHomePage) {
@@ -127,61 +121,6 @@ export function Navbar() {
             Profil
             <span className={underlineClass("about")} />
           </button>
-
-          {/* Prasarana — Dropdown */}
-          <div
-            className="relative"
-            onMouseEnter={() => setPrasaranaDropdownOpen(true)}
-            onMouseLeave={() => setPrasaranaDropdownOpen(false)}
-          >
-            <button
-              onClick={() => navigateToSection("facilities")}
-              className={`font-medium transition-colors flex items-center gap-1 relative pb-1 ${
-                isHomePage && activeSection === "#facilities" ? "text-blue-400" : "hover:text-blue-400"
-              }`}
-            >
-              <span>Prasarana</span>
-              <ChevronDown
-                size={16}
-                className={`transition-transform ${saranaDropdownOpen ? "rotate-180" : ""}`}
-              />
-              <span
-                className={`absolute bottom-0 left-0 h-0.5 bg-blue-400 rounded-full transition-opacity duration-200 ${
-                  isHomePage && activeSection === "#facilities" ? "opacity-100" : "opacity-0"
-                }`}
-                style={{ right: "20px" }}
-              />
-            </button>
-
-            <AnimatePresence>
-              {saranaDropdownOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.2 }}
-                  className={`absolute top-full mt-2 left-0 min-w-[210px] rounded-xl shadow-xl border ${
-                    isDarkMode ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200"
-                  }`}
-                >
-                  {saranaSubmenu.map((item) => (
-                    <Link
-                      key={item.name}
-                      to={item.href}
-                      className={`block px-4 py-3 font-medium transition-colors border-b last:border-0 ${
-                        isDarkMode
-                          ? "hover:bg-slate-700 border-slate-700"
-                          : "hover:bg-slate-50 border-slate-100"
-                      }`}
-                      onClick={() => setPrasaranaDropdownOpen(false)}
-                    >
-                      {item.name}
-                    </Link>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
 
           {/* Kontak */}
           <button onClick={() => navigateToSection("location")} className={navBtnClass("location")}>
@@ -258,38 +197,6 @@ export function Navbar() {
               >
                 Profil
               </button>
-
-              {/* Prasarana dropdown mobile */}
-              <div className={`border-b ${isDarkMode ? "border-slate-700" : "border-gray-100"}`}>
-                <button
-                  onClick={() => setPrasaranaDropdownOpen(!saranaDropdownOpen)}
-                  className="font-medium py-2 w-full text-left flex items-center justify-between"
-                >
-                  Prasarana
-                  <ChevronDown
-                    size={16}
-                    className={`transition-transform ${saranaDropdownOpen ? "rotate-180" : ""}`}
-                  />
-                </button>
-                {saranaDropdownOpen && (
-                  <div className="pl-4 pb-2 flex flex-col gap-2">
-                    {saranaSubmenu.map((item) => (
-                      <Link
-                        key={item.name}
-                        to={item.href}
-                        className={`py-2 font-medium text-sm ${
-                          isDarkMode
-                            ? "text-slate-400 hover:text-blue-400"
-                            : "text-slate-600 hover:text-blue-600"
-                        }`}
-                        onClick={() => setIsMobileMenuOpen(false)}
-                      >
-                        {item.name}
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
 
               {/* Kontak */}
               <button

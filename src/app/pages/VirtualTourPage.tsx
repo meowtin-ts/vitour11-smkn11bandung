@@ -220,12 +220,12 @@ export function VirtualTourPage() {
 
           // Build a clickable icon wrapper
           const wrapper = document.createElement('div');
-          wrapper.style.cssText = `width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:${bgColor};box-shadow:0 2px 10px ${glowColor};cursor:pointer;border:2.5px solid rgba(255,255,255,0.85);transition:transform .2s;`;
+          wrapper.style.cssText = `width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:${bgColor};box-shadow:0 2px 10px ${glowColor};cursor:pointer;border:2.5px solid rgba(255,255,255,0.85);transition:transform .2s;`;
 
           // SVG icon
           const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-          svg.setAttribute('width', '18');
-          svg.setAttribute('height', '18');
+          svg.setAttribute('width', '12');
+          svg.setAttribute('height', '12');
           svg.setAttribute('viewBox', '0 0 24 24');
           svg.setAttribute('fill', 'none');
           svg.setAttribute('stroke', 'white');

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useDarkMode } from "../contexts/DarkModeContext";
-import { Trash2, Loader2, MessageSquare, User } from "lucide-react";
+import { Trash2, Loader2, MessageSquare, User, Search, X } from "lucide-react";
 import { getSupabaseClient } from "/utils/supabase/client";
 import { toast } from "sonner";
 
@@ -18,6 +18,7 @@ export function AdminKomentar() {
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     const storedToken = localStorage.getItem("adminToken");
@@ -114,17 +115,42 @@ export function AdminKomentar() {
         </p>
       </div>
 
+      {/* Search Bar */}
+      <div className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border ${
+        isDarkMode ? "bg-slate-900 border-slate-700" : "bg-white border-slate-200"
+      }`}>
+        <Search size={16} className={isDarkMode ? "text-slate-500" : "text-slate-400"} />
+        <input
+          type="text"
+          placeholder="Cari nama, email, atau isi komentar..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="flex-1 bg-transparent text-sm outline-none"
+        />
+        {search && (
+          <button onClick={() => setSearch("")} className="text-slate-400 hover:text-slate-600">
+            <X size={14} />
+          </button>
+        )}
+      </div>
+
       {/* Comments List */}
       <div className="space-y-4">
-        {comments.length === 0 ? (
+        {(() => {
+          const filtered = comments.filter(c =>
+            !search ||
+            c.userName.toLowerCase().includes(search.toLowerCase()) ||
+            c.userEmail.toLowerCase().includes(search.toLowerCase()) ||
+            c.text.toLowerCase().includes(search.toLowerCase())
+          );
+          return filtered.length === 0 ? (
           <div className="text-center py-12">
             <MessageSquare className={`w-16 h-16 mx-auto mb-4 ${isDarkMode ? "text-slate-700" : "text-slate-300"}`} />
             <p className={isDarkMode ? "text-slate-400" : "text-slate-600"}>
-              Belum ada komentar
+              {search ? `Tidak ada hasil untuk "${search}"` : "Belum ada komentar"}
             </p>
           </div>
-        ) : (
-          comments.map((comment) => (
+        ) : filtered.map((comment) => (
             <div
               key={comment.id}
               className={`p-6 rounded-2xl border ${
@@ -186,8 +212,8 @@ export function AdminKomentar() {
                 </button>
               </div>
             </div>
-          ))
-        )}
+          ));
+        })()}
       </div>
     </div>
   );

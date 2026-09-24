@@ -2,6 +2,8 @@ import { motion } from "motion/react";
 import { useDarkMode } from "../contexts/DarkModeContext";
 import { AnimatedFloatingShapes } from "./AnimatedFloatingShapes";
 import { ExternalLink } from "lucide-react";
+import lapanganSiang from "../../imports/Lapangan_siang_beranda.jpeg";
+import lapanganMalam from "../../imports/Lapangan_malam_beranda.png";
 
 export function AboutUs() {
   const { isDarkMode } = useDarkMode();
@@ -12,9 +14,9 @@ export function AboutUs() {
         ? "bg-gradient-to-br from-slate-900 via-slate-800 to-blue-950"
         : "bg-gradient-to-br from-blue-50 via-white to-indigo-50"
     }`}>
-      {/* Memphis Design Floating Shapes */}
       <AnimatedFloatingShapes />
       <div className="container mx-auto px-4 md:px-6 relative z-10">
+
         {/* Heading */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -28,43 +30,31 @@ export function AboutUs() {
           }`}>
             Tentang Kami
           </h2>
-          <div className="w-24 h-1 bg-gradient-to-r from-blue-500 to-cyan-500 mx-auto rounded-full"></div>
+          <div className="w-24 h-1 bg-gradient-to-r from-blue-500 to-cyan-500 mx-auto rounded-full" />
         </motion.div>
 
-        {/* Kata Pengantar */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="max-w-4xl mx-auto"
-        >
-          <div className={`rounded-2xl shadow-lg p-8 md:p-12 border ${
-            isDarkMode
-              ? "bg-slate-800 border-slate-700"
-              : "bg-white border-blue-100"
-          }`}>
-            <h3 className={`text-2xl md:text-3xl font-semibold mb-6 ${
-              isDarkMode ? "text-blue-300" : "text-blue-900"
-            }`}>
-              Selamat Datang di SMKN 11 Bandung
-            </h3>
-            <div className={`space-y-4 leading-relaxed ${
+        {/* Two-column layout */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
+
+          {/* Kiri — Teks */}
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+          >
+            <div className={`space-y-4 leading-relaxed text-base ${
               isDarkMode ? "text-slate-300" : "text-slate-700"
             }`}>
-              <p>
-                Dengan bangga kami mempersembahkan platform <strong>Jelajah Virtual SMKN 11 Bandung</strong>, sebuah inovasi digital yang memungkinkan Anda untuk menjelajahi sekolah kami secara interaktif dan mendalam.
-              </p>
               <p>
                 SMKN 11 Bandung adalah institusi pendidikan vokasi yang berkomitmen untuk mencetak generasi muda yang kompeten, inovatif, dan siap menghadapi tantangan dunia kerja. Dengan dukungan tenaga pendidik profesional dan fasilitas modern, kami terus berupaya memberikan pengalaman belajar terbaik bagi seluruh siswa.
               </p>
               <p>
-                Melalui platform jelajah virtual ini, Anda dapat merasakan pengalaman berada di lingkungan sekolah kami, mengeksplorasi fasilitas, dan mengetahui lebih dalam tentang program-program unggulan yang kami tawarkan.
+                Melalui platform <strong>Jelajah Virtual SMKN 11 Bandung</strong> ini, Anda dapat merasakan pengalaman berada di lingkungan sekolah kami, mengeksplorasi fasilitas, dan mengetahui lebih dalam tentang program-program unggulan yang kami tawarkan.
               </p>
             </div>
 
-            {/* Tombol Profil Resmi Sekolah */}
-            <div className="mt-8 flex justify-center">
+            <div className="mt-8">
               <a
                 href="https://sekolah.data.kemendikdasmen.go.id/profil-sekolah/0FB35461-FA5D-4184-B724-AA0968A423D9"
                 target="_blank"
@@ -75,8 +65,32 @@ export function AboutUs() {
                 Lihat Profil Resmi Sekolah
               </a>
             </div>
-          </div>
-        </motion.div>
+          </motion.div>
+
+          {/* Kanan — Foto */}
+          <motion.div
+            initial={{ opacity: 0, x: 30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="relative"
+          >
+            <div className={`rounded-2xl overflow-hidden shadow-2xl border-4 ${
+              isDarkMode ? "border-slate-700" : "border-white"
+            }`}>
+              <motion.img
+                key={isDarkMode ? "malam" : "siang"}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5 }}
+                src={isDarkMode ? lapanganMalam : lapanganSiang}
+                alt={isDarkMode ? "Lapangan SMKN 11 Bandung Malam" : "Lapangan SMKN 11 Bandung Siang"}
+                className="w-full h-72 md:h-96 object-cover"
+              />
+            </div>
+          </motion.div>
+
+        </div>
       </div>
     </section>
   );

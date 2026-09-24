@@ -13,6 +13,7 @@ import {
   Eye,
   Upload,
   Loader2,
+  Search,
 } from "lucide-react";
 import { projectId } from "/utils/supabase/info";
 import { getSupabaseClient } from "/utils/supabase/client";
@@ -54,6 +55,7 @@ export function AdminPanorama() {
   const [isEditing, setIsEditing] = useState(false);
   const [editingTour, setEditingTour] = useState<Partial<VirtualTour> | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null); // File yang dipilih (belum diupload)
 
   useEffect(() => {
@@ -348,10 +350,29 @@ export function AdminPanorama() {
         </p>
       </div>
 
+        {/* Search Bar */}
+        <div className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border mb-4 ${
+          isDarkMode ? "bg-slate-900 border-slate-700" : "bg-white border-slate-200"
+        }`}>
+          <Search size={16} className={isDarkMode ? "text-slate-500" : "text-slate-400"} />
+          <input
+            type="text"
+            placeholder="Cari nama atau deskripsi panorama..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="flex-1 bg-transparent text-sm outline-none"
+          />
+          {search && (
+            <button onClick={() => setSearch("")} className="text-slate-400 hover:text-slate-600">
+              <X size={14} />
+            </button>
+          )}
+        </div>
+
         {/* Action Bar */}
         <div className="flex justify-between items-center mb-6">
           <div className={`text-sm ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
-            Total: {tours.length} lokasi
+            Total: {tours.length} lokasi{search && ` • ${tours.filter(t => t.name.toLowerCase().includes(search.toLowerCase()) || (t.description ?? "").toLowerCase().includes(search.toLowerCase())).length} hasil`}
           </div>
           <div className="flex items-center gap-3">
             {tours.length > 0 && (
@@ -383,20 +404,22 @@ export function AdminPanorama() {
           <div className="flex justify-center items-center py-20">
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
           </div>
-        ) : tours.length === 0 ? (
-          <div
-            className={`text-center py-20 rounded-xl ${
-              isDarkMode ? "bg-slate-800" : "bg-slate-50"
-            }`}
-          >
-            <MapPin className="w-16 h-16 mx-auto mb-4 text-slate-400" />
-            <p className={`text-lg ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
-              Belum ada data virtual tour
-            </p>
-          </div>
-        ) : (
+        ) : (() => {
+          const filteredTours = tours.filter(t =>
+            !search ||
+            t.name.toLowerCase().includes(search.toLowerCase()) ||
+            (t.description ?? "").toLowerCase().includes(search.toLowerCase())
+          );
+          return filteredTours.length === 0 ? (
+            <div className={`text-center py-20 rounded-xl ${isDarkMode ? "bg-slate-800" : "bg-slate-50"}`}>
+              <MapPin className="w-16 h-16 mx-auto mb-4 text-slate-400" />
+              <p className={`text-lg ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
+                {search ? `Tidak ada hasil untuk "${search}"` : "Belum ada data virtual tour"}
+              </p>
+            </div>
+          ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {tours.map((tour) => (
+            {filteredTours.map((tour) => (
               <div
                 key={tour.id}
                 className={`rounded-xl overflow-hidden shadow-lg transition-transform hover:scale-105 ${
@@ -484,7 +507,8 @@ export function AdminPanorama() {
               </div>
             ))}
           </div>
-        )}
+          );
+        })()}
 
       {/* Edit Modal */}
       {isEditing && editingTour && (

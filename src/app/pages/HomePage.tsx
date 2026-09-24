@@ -3,7 +3,6 @@ import { useDarkMode } from "../contexts/DarkModeContext";
 import { Navbar } from "../components/Navbar";
 import { Hero } from "../components/Hero";
 import { AboutUs } from "../components/AboutUs";
-import { Facilities } from "../components/Facilities";
 import { SchoolMap } from "../components/SchoolMap";
 import { Footer } from "../components/Footer";
 import { ChatbotWidget } from "../components/ChatbotWidget";
@@ -21,7 +20,6 @@ export function HomePage() {
       {!showSplash && <Navbar />}
       <Hero />
       <AboutUs />
-      <Facilities />
       <SchoolMap />
       <Footer />
       {!showSplash && <ChatbotWidget />}
