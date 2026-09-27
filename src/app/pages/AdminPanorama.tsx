@@ -14,6 +14,10 @@ import {
   Upload,
   Loader2,
   Search,
+  ArrowUpDown,
+  ChevronLeft,
+  ChevronRight,
+  Filter,
 } from "lucide-react";
 import { projectId } from "/utils/supabase/info";
 import { getSupabaseClient } from "/utils/supabase/client";
@@ -56,7 +60,12 @@ export function AdminPanorama() {
   const [editingTour, setEditingTour] = useState<Partial<VirtualTour> | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [selectedFile, setSelectedFile] = useState<File | null>(null); // File yang dipilih (belum diupload)
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [filterMenu, setFilterMenu] = useState<"all" | "visible" | "hidden" | "autoRotate" | "compass">("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [jumpPage, setJumpPage] = useState("");
+  const PAGE_SIZE = 10;
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   useEffect(() => {
     const storedToken = localStorage.getItem("adminToken");
@@ -308,6 +317,35 @@ export function AdminPanorama() {
     }
   };
 
+  useEffect(() => { setCurrentPage(1); }, [search, sortDir, filterMenu]);
+
+  const filteredTours = tours
+    .filter(t => {
+      const matchSearch = !search ||
+        t.name.toLowerCase().includes(search.toLowerCase()) ||
+        (t.description ?? "").toLowerCase().includes(search.toLowerCase());
+      const matchMenu =
+        filterMenu === "all" ? true :
+        filterMenu === "visible" ? t.showInDropdown !== false :
+        filterMenu === "hidden" ? t.showInDropdown === false :
+        filterMenu === "autoRotate" ? t.autoRotate === true :
+        filterMenu === "compass" ? t.compass === true : true;
+      return matchSearch && matchMenu;
+    })
+    .sort((a, b) => {
+      const cmp = a.order - b.order;
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+
+  const totalPages = Math.max(1, Math.ceil(filteredTours.length / PAGE_SIZE));
+  const paginatedTours = filteredTours.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  const jumpTo = () => {
+    const p = parseInt(jumpPage);
+    if (!isNaN(p) && p >= 1 && p <= totalPages) setCurrentPage(p);
+    setJumpPage("");
+  };
+
   const handleDelete = async (id: string) => {
     if (!token) return;
 
@@ -350,29 +388,56 @@ export function AdminPanorama() {
         </p>
       </div>
 
-        {/* Search Bar */}
-        <div className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border mb-4 ${
-          isDarkMode ? "bg-slate-900 border-slate-700" : "bg-white border-slate-200"
-        }`}>
-          <Search size={16} className={isDarkMode ? "text-slate-500" : "text-slate-400"} />
-          <input
-            type="text"
-            placeholder="Cari nama atau deskripsi panorama..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="flex-1 bg-transparent text-sm outline-none"
-          />
-          {search && (
-            <button onClick={() => setSearch("")} className="text-slate-400 hover:text-slate-600">
-              <X size={14} />
+        {/* Search + Filter + Sort */}
+        <div className="flex flex-col sm:flex-row gap-3 mb-4">
+          <div className={`flex-1 flex items-center gap-2 px-3 py-2.5 rounded-xl border ${
+            isDarkMode ? "bg-slate-900 border-slate-700" : "bg-white border-slate-200"
+          }`}>
+            <Search size={16} className={isDarkMode ? "text-slate-500" : "text-slate-400"} />
+            <input
+              type="text"
+              placeholder="Cari nama atau deskripsi panorama..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="flex-1 bg-transparent text-sm outline-none"
+            />
+            {search && (
+              <button onClick={() => setSearch("")} className="text-slate-400 hover:text-slate-600">
+                <X size={14} />
+              </button>
+            )}
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <Filter size={14} className={isDarkMode ? "text-slate-500" : "text-slate-400"} />
+            <select
+              value={filterMenu}
+              onChange={(e) => setFilterMenu(e.target.value as typeof filterMenu)}
+              className={`px-3 py-2.5 rounded-xl border text-sm outline-none cursor-pointer ${
+                isDarkMode ? "bg-slate-900 border-slate-700 text-slate-300" : "bg-white border-slate-200 text-slate-700"
+              }`}
+            >
+              <option value="all">Semua</option>
+              <option value="visible">Di Menu</option>
+              <option value="hidden">Tersembunyi</option>
+              <option value="autoRotate">Auto Rotate</option>
+              <option value="compass">Compass</option>
+            </select>
+            <button
+              onClick={() => setSortDir(d => d === "asc" ? "desc" : "asc")}
+              className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl border text-sm font-medium transition-colors ${
+                isDarkMode ? "bg-slate-900 border-slate-700 text-slate-300 hover:bg-slate-800" : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
+              }`}
+            >
+              <ArrowUpDown size={14} />
+              {sortDir === "asc" ? "Lama → Baru" : "Baru → Lama"}
             </button>
-          )}
+          </div>
         </div>
 
         {/* Action Bar */}
         <div className="flex justify-between items-center mb-6">
           <div className={`text-sm ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
-            Total: {tours.length} lokasi{search && ` • ${tours.filter(t => t.name.toLowerCase().includes(search.toLowerCase()) || (t.description ?? "").toLowerCase().includes(search.toLowerCase())).length} hasil`}
+            {filteredTours.length} lokasi{filterMenu !== "all" || search ? " ditemukan" : ""}
           </div>
           <div className="flex items-center gap-3">
             {tours.length > 0 && (
@@ -404,22 +469,17 @@ export function AdminPanorama() {
           <div className="flex justify-center items-center py-20">
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
           </div>
-        ) : (() => {
-          const filteredTours = tours.filter(t =>
-            !search ||
-            t.name.toLowerCase().includes(search.toLowerCase()) ||
-            (t.description ?? "").toLowerCase().includes(search.toLowerCase())
-          );
-          return filteredTours.length === 0 ? (
+        ) : paginatedTours.length === 0 ? (
             <div className={`text-center py-20 rounded-xl ${isDarkMode ? "bg-slate-800" : "bg-slate-50"}`}>
               <MapPin className="w-16 h-16 mx-auto mb-4 text-slate-400" />
               <p className={`text-lg ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
-                {search ? `Tidak ada hasil untuk "${search}"` : "Belum ada data virtual tour"}
+                {search || filterMenu !== "all" ? "Tidak ada hasil yang cocok" : "Belum ada data virtual tour"}
               </p>
             </div>
-          ) : (
+        ) : (
+          <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredTours.map((tour) => (
+            {paginatedTours.map((tour) => (
               <div
                 key={tour.id}
                 className={`rounded-xl overflow-hidden shadow-lg transition-transform hover:scale-105 ${
@@ -507,8 +567,36 @@ export function AdminPanorama() {
               </div>
             ))}
           </div>
-          );
-        })()}
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-3 pt-6">
+              <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}
+                className={`p-2 rounded-lg disabled:opacity-40 transition-colors ${isDarkMode ? "hover:bg-slate-700 text-slate-300" : "hover:bg-slate-100 text-slate-600"}`}>
+                <ChevronLeft size={16} />
+              </button>
+              <span className={`text-sm font-medium ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+                {currentPage} / {totalPages}
+              </span>
+              <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}
+                className={`p-2 rounded-lg disabled:opacity-40 transition-colors ${isDarkMode ? "hover:bg-slate-700 text-slate-300" : "hover:bg-slate-100 text-slate-600"}`}>
+                <ChevronRight size={16} />
+              </button>
+              <div className="flex items-center gap-1.5 ml-2">
+                <span className={`text-xs ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>Ke hal:</span>
+                <input type="number" min={1} max={totalPages}
+                  value={jumpPage}
+                  onChange={(e) => setJumpPage(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && jumpTo()}
+                  onBlur={jumpTo}
+                  placeholder="—"
+                  className={`w-14 px-2 py-1 rounded-lg border text-sm text-center outline-none ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300" : "bg-white border-slate-200 text-slate-700"}`}
+                />
+              </div>
+            </div>
+          )}
+          </>
+        )}
 
       {/* Edit Modal */}
       {isEditing && editingTour && (

@@ -31,13 +31,6 @@ const INITIAL_MSG: Message = {
   content: "Halo! Saya Atinn 👋 Ada yang ingin kamu tanyakan tentang pendidikan atau SMKN 11 Bandung?",
 };
 
-const QUICK_REPLIES = [
-  "Jurusan apa saja yang ada?",
-  "Cara mendaftar ke SMKN 11?",
-  "Fasilitas apa yang tersedia?",
-  "Info ekstrakurikuler",
-];
-
 const SYSTEM_PROMPT = `Kamu adalah asisten virtual cerdas dan ramah bernama "Atinn" dari SMKN 11 Bandung.
 
 KEPRIBADIAN:
@@ -323,7 +316,7 @@ export function ChatbotWidget() {
         body: JSON.stringify({
           system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
           contents: [...history, { role: "user", parts: newParts }],
-          generationConfig: { temperature: 0.75, maxOutputTokens: 1024 },
+          generationConfig: { temperature: 0.75, maxOutputTokens: 8192 },
         }),
       });
 
@@ -332,7 +325,8 @@ export function ChatbotWidget() {
       try {
         data = JSON.parse(rawText);
       } catch {
-        throw new Error("Response tidak valid dari server");
+        console.error("Non-JSON response from /api/chat:", rawText.slice(0, 300));
+        throw new Error(`Server error (${res.status}): ${rawText.slice(0, 120)}`);
       }
 
       if (!res.ok) {
@@ -355,7 +349,6 @@ export function ChatbotWidget() {
   };
 
   const sendMessage = () => doSend(input.trim(), attachment, messages);
-  const sendQuickReply = (text: string) => doSend(text, null, messages);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
@@ -541,45 +534,6 @@ export function ChatbotWidget() {
               )}
               <div ref={messagesEndRef} />
             </div>
-
-            {/* Quick replies — only at initial state */}
-            {messages.length === 1 && !isLoading && (
-              <div className={`flex-shrink-0 px-3 pt-2 pb-2.5 border-t ${isDarkMode ? "border-slate-800" : "border-slate-100"}`}
-                style={{
-                  background: isDarkMode
-                    ? "rgba(30,41,59,0.8)"
-                    : "linear-gradient(to bottom, #f0f7ff, #ffffff)",
-                }}
-              >
-                <p className={`text-[10px] font-bold uppercase tracking-widest pb-2 ${isDarkMode ? "text-blue-400/70" : "text-blue-500/70"}`}>
-                  Pertanyaan cepat
-                </p>
-                <div className="grid grid-cols-2 gap-2">
-                  {QUICK_REPLIES.map((qr, i) => {
-                    const colors = [
-                      { bg: "from-blue-500 to-blue-600", light: "from-blue-50 to-blue-100 border-blue-200 text-blue-700 hover:from-blue-100 hover:to-blue-200" },
-                      { bg: "from-cyan-500 to-cyan-600", light: "from-cyan-50 to-cyan-100 border-cyan-200 text-cyan-700 hover:from-cyan-100 hover:to-cyan-200" },
-                      { bg: "from-violet-500 to-violet-600", light: "from-violet-50 to-violet-100 border-violet-200 text-violet-700 hover:from-violet-100 hover:to-violet-200" },
-                      { bg: "from-emerald-500 to-emerald-600", light: "from-emerald-50 to-emerald-100 border-emerald-200 text-emerald-700 hover:from-emerald-100 hover:to-emerald-200" },
-                    ];
-                    const c = colors[i % colors.length];
-                    return (
-                      <button
-                        key={qr}
-                        onClick={() => sendQuickReply(qr)}
-                        className={`w-full text-xs px-2.5 py-2 rounded-xl border font-medium transition-all text-center leading-snug ${
-                          isDarkMode
-                            ? `bg-gradient-to-br ${c.bg} text-white border-transparent opacity-85 hover:opacity-100 hover:shadow-md`
-                            : `bg-gradient-to-br border ${c.light}`
-                        }`}
-                      >
-                        {qr}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
 
             {/* Attachment preview */}
             {attachment && (

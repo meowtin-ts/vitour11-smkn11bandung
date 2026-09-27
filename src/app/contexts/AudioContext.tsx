@@ -10,32 +10,8 @@ const AudioContext = createContext<AudioContextType | undefined>(undefined);
 export function AudioProvider({ children }: { children: ReactNode }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const hasAttemptedAutoPlay = useRef(false);
 
   const audioUrl = "/CraveYou.mp3";
-
-  // Auto-play on first user interaction (required by browser autoplay policy)
-  useEffect(() => {
-    const handleFirstInteraction = () => {
-      if (!hasAttemptedAutoPlay.current) {
-        hasAttemptedAutoPlay.current = true;
-        setIsPlaying(true);
-      }
-      document.removeEventListener("click", handleFirstInteraction);
-      document.removeEventListener("keydown", handleFirstInteraction);
-      document.removeEventListener("touchstart", handleFirstInteraction);
-    };
-
-    document.addEventListener("click", handleFirstInteraction);
-    document.addEventListener("keydown", handleFirstInteraction);
-    document.addEventListener("touchstart", handleFirstInteraction);
-
-    return () => {
-      document.removeEventListener("click", handleFirstInteraction);
-      document.removeEventListener("keydown", handleFirstInteraction);
-      document.removeEventListener("touchstart", handleFirstInteraction);
-    };
-  }, []);
 
   // Handle play/pause
   useEffect(() => {

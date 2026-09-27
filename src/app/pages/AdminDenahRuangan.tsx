@@ -10,6 +10,9 @@ import {
   Save,
   LayoutGrid,
   List,
+  ChevronLeft,
+  ChevronRight,
+  ArrowUpDown,
 } from "lucide-react";
 import { useDarkMode } from "../contexts/DarkModeContext";
 import { getSupabaseClient } from "/utils/supabase/client";
@@ -475,6 +478,13 @@ export function AdminDenahRuangan() {
   const [search, setSearch] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [filterGedung, setFilterGedung] = useState("semua");
+  const [filterKondisi, setFilterKondisi] = useState("semua");
+  const [filterInventaris, setFilterInventaris] = useState("semua");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [jumpPage, setJumpPage] = useState("");
+  const PAGE_SIZE = 10;
 
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
@@ -494,6 +504,7 @@ export function AdminDenahRuangan() {
   };
 
   useEffect(() => { fetchRooms(); }, []);
+  useEffect(() => { setCurrentPage(1); }, [search, filterGedung, filterKondisi, filterInventaris, sortDir]);
 
   const openModal = (slotId: string, lantai: "atas" | "bawah", room?: FloorRoom) => {
     setModalSlotId(slotId);
@@ -532,14 +543,46 @@ export function AdminDenahRuangan() {
   const totalAtas = rooms.filter((r) => r.lantai === "atas").length;
   const totalBawah = rooms.filter((r) => r.lantai === "bawah").length;
 
-  const filteredRooms = rooms.filter((r) => {
-    const matchSearch =
-      !search ||
-      r.nama_ruangan.toLowerCase().includes(search.toLowerCase()) ||
-      (r.kode_ruang ?? "").toLowerCase().includes(search.toLowerCase()) ||
-      (r.gedung ?? "").toLowerCase().includes(search.toLowerCase());
-    return matchSearch;
-  });
+  const uniqueGedung = [...new Set(rooms.map(r => r.gedung).filter(Boolean))].sort() as string[];
+
+  const inventarisOptions = [
+    { value: "papan_tulis", label: "Papan Tulis" },
+    { value: "meja",        label: "Meja" },
+    { value: "kursi",       label: "Kursi" },
+    { value: "kursi_kampus",label: "Kursi Kampus" },
+    { value: "cctv",        label: "CCTV" },
+    { value: "proyektor",   label: "Proyektor" },
+    { value: "ac",          label: "AC" },
+    { value: "kipas_angin", label: "Kipas Angin" },
+    { value: "televisi",    label: "Televisi" },
+  ];
+
+  const filteredRooms = rooms
+    .filter((r) => {
+      const matchSearch =
+        !search ||
+        r.nama_ruangan.toLowerCase().includes(search.toLowerCase()) ||
+        (r.kode_ruang ?? "").toLowerCase().includes(search.toLowerCase()) ||
+        (r.gedung ?? "").toLowerCase().includes(search.toLowerCase());
+      const matchGedung = filterGedung === "semua" || r.gedung === filterGedung;
+      const matchKondisi = filterKondisi === "semua" || r.kondisi_ruangan === filterKondisi;
+      const matchInventaris =
+        filterInventaris === "semua" || ((r as any)[filterInventaris] ?? 0) > 0;
+      return matchSearch && matchGedung && matchKondisi && matchInventaris;
+    })
+    .sort((a, b) => {
+      const cmp = a.nama_ruangan.localeCompare(b.nama_ruangan);
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+
+  const totalPages = Math.max(1, Math.ceil(filteredRooms.length / PAGE_SIZE));
+  const paginatedRooms = filteredRooms.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  const jumpTo = () => {
+    const p = parseInt(jumpPage);
+    if (!isNaN(p) && p >= 1 && p <= totalPages) setCurrentPage(p);
+    setJumpPage("");
+  };
 
   const kondisiColor = (k?: string) => {
     if (!k) return isDarkMode ? "text-slate-500" : "text-slate-400";
@@ -609,23 +652,79 @@ export function AdminDenahRuangan() {
       {/* ── Semua tab ── */}
       {activeTab === "semua" && (
         <div className="space-y-4">
-          {/* Search */}
-          <div className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border ${
-            isDarkMode ? "bg-slate-900 border-slate-700" : "bg-white border-slate-200"
-          }`}>
-            <Search size={16} className={isDarkMode ? "text-slate-500" : "text-slate-400"} />
-            <input
-              type="text"
-              placeholder="Cari nama, kode, atau gedung..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="flex-1 bg-transparent text-sm outline-none"
-            />
-            {search && (
-              <button onClick={() => setSearch("")} className="text-slate-400 hover:text-slate-600">
-                <X size={14} />
+          {/* Search + Filters */}
+          <div className="flex flex-col gap-3">
+            {/* Search bar */}
+            <div className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border ${
+              isDarkMode ? "bg-slate-900 border-slate-700" : "bg-white border-slate-200"
+            }`}>
+              <Search size={16} className={isDarkMode ? "text-slate-500" : "text-slate-400"} />
+              <input
+                type="text"
+                placeholder="Cari nama, kode, atau gedung..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="flex-1 bg-transparent text-sm outline-none"
+              />
+              {search && (
+                <button onClick={() => setSearch("")} className="text-slate-400 hover:text-slate-600">
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+
+            {/* Filter dropdowns + direction toggle */}
+            <div className="flex flex-wrap gap-2">
+              {/* Filter: Gedung */}
+              <select
+                value={filterGedung}
+                onChange={(e) => setFilterGedung(e.target.value)}
+                className={`px-3 py-2 rounded-xl border text-sm outline-none cursor-pointer ${
+                  isDarkMode ? "bg-slate-900 border-slate-700 text-slate-300" : "bg-white border-slate-200 text-slate-700"
+                }`}
+              >
+                <option value="semua">Semua Gedung</option>
+                {uniqueGedung.map(g => <option key={g} value={g}>{g}</option>)}
+              </select>
+
+              {/* Filter: Kondisi Ruangan */}
+              <select
+                value={filterKondisi}
+                onChange={(e) => setFilterKondisi(e.target.value)}
+                className={`px-3 py-2 rounded-xl border text-sm outline-none cursor-pointer ${
+                  isDarkMode ? "bg-slate-900 border-slate-700 text-slate-300" : "bg-white border-slate-200 text-slate-700"
+                }`}
+              >
+                <option value="semua">Semua Kondisi</option>
+                <option value="Baik">Baik</option>
+                <option value="Rusak Ringan">Rusak Ringan</option>
+                <option value="Rusak Sedang">Rusak Sedang</option>
+                <option value="Rusak Berat">Rusak Berat</option>
+              </select>
+
+              {/* Filter: Inventaris */}
+              <select
+                value={filterInventaris}
+                onChange={(e) => setFilterInventaris(e.target.value)}
+                className={`px-3 py-2 rounded-xl border text-sm outline-none cursor-pointer ${
+                  isDarkMode ? "bg-slate-900 border-slate-700 text-slate-300" : "bg-white border-slate-200 text-slate-700"
+                }`}
+              >
+                <option value="semua">Semua Inventaris</option>
+                {inventarisOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+
+              {/* Sort direction */}
+              <button
+                onClick={() => setSortDir(d => d === "asc" ? "desc" : "asc")}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-sm font-medium transition-colors ${
+                  isDarkMode ? "bg-slate-900 border-slate-700 text-slate-300 hover:bg-slate-800" : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
+                }`}
+              >
+                <ArrowUpDown size={14} />
+                {sortDir === "asc" ? "A → Z" : "Z → A"}
               </button>
-            )}
+            </div>
           </div>
 
           {/* Table */}
@@ -664,7 +763,7 @@ export function AdminDenahRuangan() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredRooms.map((room, idx) => (
+                    {paginatedRooms.map((room, idx) => (
                       <tr
                         key={room.id}
                         className={`border-b transition-colors ${
@@ -759,6 +858,34 @@ export function AdminDenahRuangan() {
               </div>
             )}
           </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-3 pt-4">
+              <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}
+                className={`p-2 rounded-lg disabled:opacity-40 transition-colors ${isDarkMode ? "hover:bg-slate-700 text-slate-300" : "hover:bg-slate-100 text-slate-600"}`}>
+                <ChevronLeft size={16} />
+              </button>
+              <span className={`text-sm font-medium ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+                {currentPage} / {totalPages}
+              </span>
+              <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}
+                className={`p-2 rounded-lg disabled:opacity-40 transition-colors ${isDarkMode ? "hover:bg-slate-700 text-slate-300" : "hover:bg-slate-100 text-slate-600"}`}>
+                <ChevronRight size={16} />
+              </button>
+              <div className="flex items-center gap-1.5 ml-2">
+                <span className={`text-xs ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>Ke hal:</span>
+                <input type="number" min={1} max={totalPages}
+                  value={jumpPage}
+                  onChange={(e) => setJumpPage(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && jumpTo()}
+                  onBlur={jumpTo}
+                  placeholder="—"
+                  className={`w-14 px-2 py-1 rounded-lg border text-sm text-center outline-none ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300" : "bg-white border-slate-200 text-slate-700"}`}
+                />
+              </div>
+            </div>
+          )}
         </div>
       )}
 

@@ -34,7 +34,7 @@ export function AboutUs() {
         </motion.div>
 
         {/* Two-column layout */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-stretch">
 
           {/* Kiri — Teks */}
           <motion.div
@@ -42,6 +42,11 @@ export function AboutUs() {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.1 }}
+            className={`flex flex-col justify-center p-8 rounded-2xl border shadow-lg ${
+              isDarkMode
+                ? "bg-slate-800/60 border-slate-700"
+                : "bg-white/80 border-slate-200"
+            }`}
           >
             <div className={`space-y-4 leading-relaxed text-base ${
               isDarkMode ? "text-slate-300" : "text-slate-700"
@@ -54,7 +59,7 @@ export function AboutUs() {
               </p>
             </div>
 
-            <div className="mt-8">
+            <div className="mt-8 flex justify-center">
               <a
                 href="https://sekolah.data.kemendikdasmen.go.id/profil-sekolah/0FB35461-FA5D-4184-B724-AA0968A423D9"
                 target="_blank"
@@ -73,10 +78,10 @@ export function AboutUs() {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="relative"
+            className="relative min-h-72"
           >
-            <div className={`rounded-2xl overflow-hidden shadow-2xl border-4 ${
-              isDarkMode ? "border-slate-700" : "border-white"
+            <div className={`rounded-2xl overflow-hidden shadow-2xl border-2 h-full ${
+              isDarkMode ? "border-slate-700" : "border-slate-200"
             }`}>
               <motion.img
                 key={isDarkMode ? "malam" : "siang"}
@@ -85,7 +90,7 @@ export function AboutUs() {
                 transition={{ duration: 0.5 }}
                 src={isDarkMode ? lapanganMalam : lapanganSiang}
                 alt={isDarkMode ? "Lapangan SMKN 11 Bandung Malam" : "Lapangan SMKN 11 Bandung Siang"}
-                className="w-full h-72 md:h-96 object-cover"
+                className="w-full h-full object-cover"
               />
             </div>
           </motion.div>

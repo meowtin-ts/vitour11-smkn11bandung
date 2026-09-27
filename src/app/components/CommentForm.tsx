@@ -5,7 +5,7 @@ import { GoogleOneTap } from "./GoogleOneTap";
 import { getSupabaseClient } from "/utils/supabase/client";
 import { toast } from "sonner";
 
-const RECAPTCHA_SITE_KEY = "6LelOKItAAAAAMXNtoMq_jXJfJBufX85OGjqrLVF";
+const RECAPTCHA_SITE_KEY = "6LfSktItAAAAADWqh8DGlih-V7Rhi6KWgzNtsgNi";
 
 interface GoogleUser {
   email: string;
