@@ -70,7 +70,7 @@ export function GoogleOneTap({ onSuccess, onError }: GoogleOneTapProps) {
       window.google.accounts.id.initialize({
         // IMPORTANT: Ganti dengan Google Client ID Anda dari Google Cloud Console
         // Tutorial setup ada di GOOGLE_AUTH_SETUP.md
-        client_id: "474010809089-qpvi46jkso1d1qlpsd0nsipae8uum3jo.apps.googleusercontent.com",
+        client_id: "1041540889601-42evj8ni73njds0qmfi1j53i9ivbkm9d.apps.googleusercontent.com",
         callback: handleCredentialResponse,
         auto_select: false,
         cancel_on_tap_outside: true,
