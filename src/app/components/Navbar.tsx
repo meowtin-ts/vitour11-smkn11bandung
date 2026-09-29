@@ -104,7 +104,7 @@ export function Navbar() {
         {/* Logo */}
         <div className="flex items-center gap-2 font-bold text-2xl">
           <img src={schoolLogo} alt="Logo SMKN 11 Bandung" className="w-8 h-8 object-contain" />
-          <span className="hidden sm:inline">Jelajah SMKN 11 Bandung</span>
+          <span className="hidden sm:inline">Virtual Tour 11</span>
           <span className="sm:hidden">SMKN 11</span>
         </div>
 

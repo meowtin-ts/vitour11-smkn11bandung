@@ -6,6 +6,7 @@ import {
   Building2, ExternalLink,
 } from "lucide-react";
 import { getSupabaseClient } from "/utils/supabase/client";
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend, Label } from "recharts";
 
 interface Stats {
   panoramas: number;
@@ -194,35 +195,120 @@ export function AdminDashboardHome() {
 
       {/* Statistik Konten */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Pie Chart */}
         <div className={`p-6 rounded-2xl border ${isDarkMode ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200"}`}>
           <div className="flex items-center gap-3 mb-5">
             <TrendingUp className="text-green-500" size={22} />
             <h3 className={`text-lg font-bold ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-              Statistik Konten
+              Distribusi Konten
             </h3>
           </div>
-          <div className="space-y-3">
-            {[
-              { label: "Total Panorama", value: stats.panoramas, color: "bg-blue-500" },
-              { label: "Data Ruangan (Denah)", value: stats.ruangan, color: "bg-cyan-500" },
-              { label: "Total Komentar", value: stats.komentar, color: "bg-pink-500" },
-            ].map(({ label, value, color }) => (
-              <div key={label}>
-                <div className="flex justify-between items-center mb-1">
-                  <span className={`text-sm ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>{label}</span>
-                  <span className={`text-sm font-bold ${isDarkMode ? "text-white" : "text-slate-900"}`}>{value}</span>
-                </div>
-                <div className={`h-1.5 rounded-full ${isDarkMode ? "bg-slate-800" : "bg-slate-100"}`}>
-                  <div
-                    className={`h-1.5 rounded-full ${color} transition-all`}
-                    style={{ width: `${Math.min(100, (value / (Math.max(stats.panoramas, stats.ruangan, stats.komentar) || 1)) * 100)}%` }}
-                  />
-                </div>
+          {(() => {
+            const total = stats.panoramas + stats.ruangan + stats.komentar;
+            const pieData = [
+              { name: "Panorama", value: stats.panoramas, color: "#3b82f6" },
+              { name: "Ruangan", value: stats.ruangan, color: "#06b6d4" },
+              { name: "Komentar", value: stats.komentar, color: "#ec4899" },
+            ].filter(d => d.value > 0);
+
+            if (total === 0) return (
+              <div className={`flex items-center justify-center h-48 text-sm ${isDarkMode ? "text-slate-600" : "text-slate-400"}`}>
+                Belum ada data
               </div>
-            ))}
-          </div>
+            );
+
+            const renderPctLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
+              if (percent < 0.06) return null;
+              const RADIAN = Math.PI / 180;
+              const r = innerRadius + (outerRadius - innerRadius) * 0.55;
+              const x = cx + r * Math.cos(-midAngle * RADIAN);
+              const y = cy + r * Math.sin(-midAngle * RADIAN);
+              return (
+                <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central"
+                  fontSize={12} fontWeight="700">
+                  {`${(percent * 100).toFixed(0)}%`}
+                </text>
+              );
+            };
+
+            return (
+              <>
+                <ResponsiveContainer width="100%" height={230}>
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={58}
+                      outerRadius={88}
+                      paddingAngle={3}
+                      dataKey="value"
+                      labelLine={false}
+                      label={renderPctLabel}
+                    >
+                      {pieData.map((entry, i) => (
+                        <Cell key={i} fill={entry.color} stroke="transparent" />
+                      ))}
+                      <Label
+                        content={({ viewBox }: any) => {
+                          const { cx, cy } = viewBox;
+                          return (
+                            <g>
+                              <text x={cx} y={cy - 8} textAnchor="middle" dominantBaseline="middle"
+                                fontSize={30} fontWeight="800"
+                                fill={isDarkMode ? "#f1f5f9" : "#0f172a"}>
+                                {total}
+                              </text>
+                              <text x={cx} y={cy + 16} textAnchor="middle" dominantBaseline="middle"
+                                fontSize={11}
+                                fill={isDarkMode ? "#64748b" : "#94a3b8"}>
+                                Total Konten
+                              </text>
+                            </g>
+                          );
+                        }}
+                        position="center"
+                      />
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        background: isDarkMode ? "#0f172a" : "#fff",
+                        border: `1px solid ${isDarkMode ? "#1e293b" : "#e2e8f0"}`,
+                        borderRadius: "10px",
+                        color: isDarkMode ? "#f1f5f9" : "#0f172a",
+                        fontSize: "13px",
+                      }}
+                      formatter={(value: number, name: string) => [`${value} item`, name]}
+                    />
+                    <Legend
+                      iconType="circle"
+                      iconSize={8}
+                      formatter={(value) => (
+                        <span style={{ color: isDarkMode ? "#94a3b8" : "#64748b", fontSize: "13px" }}>{value}</span>
+                      )}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+                {/* Summary row */}
+                <div className="flex justify-center gap-6 mt-1">
+                  {[
+                    { label: "Panorama", value: stats.panoramas, color: "text-blue-500", pct: total ? Math.round(stats.panoramas / total * 100) : 0 },
+                    { label: "Ruangan",  value: stats.ruangan,   color: "text-cyan-500",  pct: total ? Math.round(stats.ruangan   / total * 100) : 0 },
+                    { label: "Komentar", value: stats.komentar,  color: "text-pink-500",  pct: total ? Math.round(stats.komentar  / total * 100) : 0 },
+                  ].map(({ label, value, color, pct }) => (
+                    <div key={label} className="text-center">
+                      <p className={`text-lg font-bold ${color}`}>{value}</p>
+                      <p className={`text-xs font-medium ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>{pct}%</p>
+                      <p className={`text-xs ${isDarkMode ? "text-slate-600" : "text-slate-400"}`}>{label}</p>
+                    </div>
+                  ))}
+                </div>
+              </>
+            );
+          })()}
         </div>
 
+        {/* Info card */}
         <div className={`p-6 rounded-2xl border ${isDarkMode ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200"}`}>
           <div className="flex items-center gap-3 mb-4">
             <Users className="text-blue-500" size={22} />
@@ -233,11 +319,11 @@ export function AdminDashboardHome() {
           </p>
           <div className="mt-4 grid grid-cols-2 gap-3">
             <div className={`p-3 rounded-xl text-center ${isDarkMode ? "bg-slate-800" : "bg-slate-50"}`}>
-              <p className={`text-2xl font-bold text-blue-500`}>{stats.panoramas + stats.ruangan}</p>
+              <p className="text-2xl font-bold text-blue-500">{stats.panoramas + stats.ruangan}</p>
               <p className={`text-xs mt-0.5 ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>Total Konten</p>
             </div>
             <div className={`p-3 rounded-xl text-center ${isDarkMode ? "bg-slate-800" : "bg-slate-50"}`}>
-              <p className={`text-2xl font-bold text-pink-500`}>{stats.komentar}</p>
+              <p className="text-2xl font-bold text-pink-500">{stats.komentar}</p>
               <p className={`text-xs mt-0.5 ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>Ulasan Masuk</p>
             </div>
           </div>

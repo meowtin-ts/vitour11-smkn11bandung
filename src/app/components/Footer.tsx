@@ -71,11 +71,11 @@ export function Footer() {
           <div>
             <h3 className="text-lg font-semibold mb-6 text-blue-200">Tautan Cepat</h3>
             <ul className="space-y-3">
-              <li><a href="#" className="text-slate-400 hover:text-white transition-colors">Beranda</a></li>
-              <li><a href="#about" className="text-slate-400 hover:text-white transition-colors">Profil</a></li>
-              <li><a href="#facilities" className="text-slate-400 hover:text-white transition-colors">Prasarana</a></li>
-              <li><a href="/virtual-tour" className="text-slate-400 hover:text-white transition-colors">Virtual Tour</a></li>
-              <li><a href="#location" className="text-slate-400 hover:text-white transition-colors">Kontak</a></li>
+              <li><Link to="/" className="text-slate-400 hover:text-white transition-colors">Beranda</Link></li>
+              <li><Link to="/#about" className="text-slate-400 hover:text-white transition-colors">Profil</Link></li>
+              <li><Link to="/#location" className="text-slate-400 hover:text-white transition-colors">Kontak</Link></li>
+              <li><Link to="/virtual-tour" className="text-slate-400 hover:text-white transition-colors">Virtual Tour</Link></li>
+              <li><Link to="/denah-interaktif" className="text-slate-400 hover:text-white transition-colors">Denah Interaktif</Link></li>
             </ul>
           </div>
 
@@ -128,10 +128,42 @@ export function Footer() {
           </div>
         </div>
 
-        <div className={`border-t pt-8 text-center text-slate-500 text-sm ${
+        {/* Large outlined text — top visible, bottom fades into footer bg */}
+        <div
+          className="relative select-none pointer-events-none -mx-4 md:-mx-6 mt-4"
+          style={{ height: "clamp(3.5rem, 7vw, 6.5rem)", overflow: "hidden" }}
+        >
+          <p
+            className="absolute bottom-0 left-0 right-0 text-center font-black uppercase leading-none whitespace-nowrap"
+            style={{
+              fontSize: "clamp(6rem, 18vw, 16rem)",
+              color: "transparent",
+              WebkitTextStroke: "1.5px rgba(255,255,255,0.18)",
+              letterSpacing: "0.04em",
+              lineHeight: 1,
+            }}
+          >
+            VITOUR 11
+          </p>
+          {/* gradient fade — matches footer bg */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background: "linear-gradient(to bottom, transparent 30%, #020617 100%)",
+            }}
+          />
+        </div>
+
+        {/* Bottom bar */}
+        <div className={`border-t pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-slate-500 text-sm ${
           isDarkMode ? "border-slate-900" : "border-slate-800"
         }`}>
           <p>&copy; {new Date().getFullYear()} SMKN 11 Bandung. All rights reserved.</p>
+          <div className="flex items-center gap-5">
+            <a href="#" className="hover:text-white transition-colors">Kebijakan Privasi</a>
+            <a href="#" className="hover:text-white transition-colors">Syarat Layanan</a>
+            <a href="#contact" className="hover:text-white transition-colors">Kontak</a>
+          </div>
         </div>
       </div>
     </footer>
