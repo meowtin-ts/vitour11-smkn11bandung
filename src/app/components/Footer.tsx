@@ -128,42 +128,11 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Large outlined text — top visible, bottom fades into footer bg */}
-        <div
-          className="relative select-none pointer-events-none -mx-4 md:-mx-6 mt-4"
-          style={{ height: "clamp(3.5rem, 7vw, 6.5rem)", overflow: "hidden" }}
-        >
-          <p
-            className="absolute bottom-0 left-0 right-0 text-center font-black uppercase leading-none whitespace-nowrap"
-            style={{
-              fontSize: "clamp(6rem, 18vw, 16rem)",
-              color: "transparent",
-              WebkitTextStroke: "1.5px rgba(255,255,255,0.18)",
-              letterSpacing: "0.04em",
-              lineHeight: 1,
-            }}
-          >
-            VITOUR 11
-          </p>
-          {/* gradient fade — matches footer bg */}
-          <div
-            className="absolute inset-0"
-            style={{
-              background: "linear-gradient(to bottom, transparent 30%, #020617 100%)",
-            }}
-          />
-        </div>
-
         {/* Bottom bar */}
-        <div className={`border-t pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-slate-500 text-sm ${
-          isDarkMode ? "border-slate-900" : "border-slate-800"
+        <div className={`border-t pt-6 text-center text-slate-500 text-sm ${
+          isDarkMode ? "border-slate-800" : "border-slate-700"
         }`}>
           <p>&copy; {new Date().getFullYear()} SMKN 11 Bandung. All rights reserved.</p>
-          <div className="flex items-center gap-5">
-            <a href="#" className="hover:text-white transition-colors">Kebijakan Privasi</a>
-            <a href="#" className="hover:text-white transition-colors">Syarat Layanan</a>
-            <a href="#contact" className="hover:text-white transition-colors">Kontak</a>
-          </div>
         </div>
       </div>
     </footer>
