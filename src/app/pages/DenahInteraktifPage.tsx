@@ -624,7 +624,7 @@ function FloorPlanView({
         <span className={isDarkMode ? "text-slate-600" : "text-slate-300"}>·</span>
         <span className={`text-xs ${isDarkMode ? "text-slate-500" : "text-slate-500"}`}>
           <span className="inline-block w-3 h-3 bg-blue-600 rounded-sm mr-1.5 align-middle" />
-          Hover ruangan untuk melihat nama · klik untuk detail
+          Arahkan atau sentuh ruangan untuk nama · klik / angkat jari untuk detail
         </span>
         <span className={isDarkMode ? "text-slate-600" : "text-slate-300"}>·</span>
         <span className={`text-xs ${isDarkMode ? "text-slate-500" : "text-slate-500"}`}>

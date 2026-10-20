@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 
 // ── Slot type ──────────────────────────────────────────────────────────
 export interface Slot { l: number; t: number; w: number; h: number; }
@@ -54,26 +54,26 @@ export const ATAS_BLUE: Slot[] = [
   {l:87.934, t:39.022, w:5.985,  h:5.054},
   {l:9.363,  t:44.325, w:6.564,  h:3.894},
   {l:87.741, t:45.402, w:6.178,  h:1.16},
-  {l:74.035, t:48.053, w:9.363,  h:4.474},
+  {l:74.035, t:47.473, w:9.363,  h:4.971},
   {l:9.363,  t:48.716, w:6.564,  h:3.894},
   {l:9.363,  t:53.107, w:6.564,  h:3.894},
-  {l:74.035, t:53.604, w:6.274,  h:4.474},
+  {l:74.035, t:53.107, w:6.081,  h:5.054},
   {l:9.363,  t:57.498, w:6.564,  h:3.314},
-  {l:73.938, t:59.238, w:6.274,  h:4.557},
+  {l:73.938, t:58.741, w:6.178,  h:5.551},
   {l:9.363,  t:61.309, w:6.564,  h:2.486},
-  {l:88.127, t:62.635, w:5.792,  h:4.805},
-  {l:74.035, t:64.623, w:6.274,  h:9.031},
+  {l:88.127, t:62.635, w:5.792,  h:5.137},
+  {l:74.035, t:64.872, w:6.081,  h:7.871},
   {l:9.653,  t:68.268, w:6.274,  h:4.557},
-  {l:88.127, t:68.766, w:5.792,  h:5.054},
+  {l:88.127, t:68.351, w:5.792,  h:5.634},
   {l:25.386, t:73.322, w:8.977,  h:5.22},
   {l:9.653,  t:73.488, w:6.274,  h:4.474},
-  {l:73.938, t:74.565, w:6.274,  h:9.114},
-  {l:88.127, t:75.228, w:5.792,  h:5.054},
+  {l:74.035, t:73.488, w:6.081,  h:10.191},
+  {l:88.127, t:74.565, w:5.792,  h:5.717},
   {l:9.653,  t:78.625, w:6.274,  h:6.959},
   {l:25.386, t:79.122, w:8.977,  h:6.462},
 ];
 
-// ── Lantai Atas — 65 gray slots ────────────────────────────────────────
+// ── Lantai Atas — 66 gray slots ────────────────────────────────────────
 export const ATAS_GRAY: Slot[] = [
   {l:33.301, t:13.836, w:5.212,  h:4.391},
   {l:39.575, t:13.836, w:5.309,  h:4.391},
@@ -102,9 +102,9 @@ export const ATAS_GRAY: Slot[] = [
   {l:24.614, t:39.188, w:1.544,  h:1.326},
   {l:39.865, t:39.519, w:17.568, h:2.9},
   {l:24.614, t:41.176, w:1.544,  h:1.408},
-  {l:17.181, t:42.502, w:6.467,  h:0.829},
-  {l:17.181, t:43.745, w:6.467,  h:4.474},
-  {l:31.853, t:44.159, w:24.807, h:23.861},
+  {l:17.181, t:42.916, w:6.467,  h:0.746},
+  {l:32.529, t:43.911, w:24.807, h:23.861},
+  {l:17.181, t:44.325, w:6.467,  h:3.894},
   {l:80.695, t:45.402, w:6.178,  h:1.16},
   {l:85.618, t:47.39,  w:1.255,  h:5.22},
   {l:61.004, t:47.473, w:3.378,  h:20.05},
@@ -120,6 +120,7 @@ export const ATAS_GRAY: Slot[] = [
   {l:65.927, t:64.872, w:5.792,  h:4.722},
   {l:3.378,  t:66.114, w:4.054,  h:25.269},
   {l:17.181, t:68.268, w:6.178,  h:4.557},
+  {l:35.039, t:70.091, w:18.629, h:2.403},
   {l:65.927, t:70.091, w:5.792,  h:2.651},
   {l:35.039, t:73.239, w:13.224, h:5.302},
   {l:49.131, t:73.239, w:4.537,  h:5.137},
@@ -142,7 +143,7 @@ export const ATAS_GRAY: Slot[] = [
   {l:66.216, t:95.692, w:14.382, h:1.74},
 ];
 
-// ── Lantai Bawah — 65 blue slots ──────────────────────────────────────
+// ── Lantai Bawah — 66 blue slots ──────────────────────────────────────
 export const BAWAH_BLUE: Slot[] = [
   {l:33.301, t:13.836, w:5.212,  h:4.308},
   {l:39.575, t:13.836, w:5.309,  h:4.308},
@@ -171,9 +172,9 @@ export const BAWAH_BLUE: Slot[] = [
   {l:24.614, t:39.188, w:1.544,  h:1.326},
   {l:39.865, t:39.519, w:17.568, h:2.9},
   {l:24.614, t:41.176, w:1.544,  h:1.408},
-  {l:17.181, t:42.502, w:6.467,  h:0.829},
-  {l:17.181, t:43.745, w:6.467,  h:4.474},
-  {l:31.853, t:44.159, w:24.807, h:23.861},
+  {l:17.181, t:42.916, w:6.467,  h:0.746},
+  {l:32.529, t:43.911, w:24.807, h:23.861},
+  {l:17.181, t:44.325, w:6.467,  h:3.894},
   {l:80.695, t:45.402, w:6.178,  h:1.16},
   {l:85.618, t:47.39,  w:1.255,  h:5.22},
   {l:61.004, t:47.473, w:3.282,  h:20.05},
@@ -189,6 +190,7 @@ export const BAWAH_BLUE: Slot[] = [
   {l:65.927, t:64.872, w:5.792,  h:4.722},
   {l:3.378,  t:66.114, w:4.054,  h:25.269},
   {l:17.181, t:68.268, w:6.178,  h:4.557},
+  {l:35.039, t:70.091, w:18.629, h:2.403},
   {l:65.927, t:70.091, w:5.792,  h:2.651},
   {l:35.039, t:73.239, w:13.224, h:5.302},
   {l:49.131, t:73.239, w:4.537,  h:5.137},
@@ -235,21 +237,21 @@ export const BAWAH_GRAY: Slot[] = [
   {l:87.934, t:39.022, w:5.792,  h:5.054},
   {l:9.363,  t:44.325, w:6.564,  h:3.894},
   {l:87.741, t:45.402, w:6.178,  h:1.16},
-  {l:74.035, t:48.053, w:9.363,  h:4.474},
+  {l:74.035, t:47.473, w:9.363,  h:4.971},
   {l:9.363,  t:48.716, w:6.564,  h:3.894},
   {l:9.363,  t:53.107, w:6.564,  h:3.894},
-  {l:74.035, t:53.604, w:6.274,  h:4.474},
+  {l:74.035, t:53.107, w:6.081,  h:5.054},
   {l:9.363,  t:57.498, w:6.564,  h:3.314},
-  {l:73.938, t:59.238, w:6.274,  h:4.557},
+  {l:73.938, t:58.741, w:6.178,  h:5.551},
   {l:9.363,  t:61.309, w:6.564,  h:2.486},
-  {l:88.127, t:62.635, w:5.792,  h:4.805},
-  {l:74.035, t:64.623, w:6.274,  h:9.031},
+  {l:88.127, t:62.635, w:5.792,  h:5.137},
+  {l:74.035, t:64.872, w:6.081,  h:7.871},
   {l:9.653,  t:68.268, w:6.274,  h:4.557},
-  {l:88.127, t:68.766, w:5.792,  h:5.054},
+  {l:88.127, t:68.351, w:5.792,  h:5.634},
   {l:25.386, t:73.322, w:8.977,  h:5.22},
   {l:9.653,  t:73.488, w:6.274,  h:4.474},
-  {l:73.938, t:74.565, w:6.274,  h:9.114},
-  {l:88.127, t:75.228, w:5.792,  h:5.054},
+  {l:74.035, t:73.488, w:6.081,  h:10.191},
+  {l:88.127, t:74.565, w:5.792,  h:5.717},
   {l:9.653,  t:78.625, w:6.274,  h:6.959},
   {l:25.386, t:79.122, w:8.977,  h:6.462},
 ];
@@ -273,6 +275,11 @@ export function FloorPlanChart({
   onRoomClick,
 }: FloorPlanChartProps) {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  // Mobile swipe: track which slot is under the finger while dragging
+  const [touchHoveredId, setTouchHoveredId] = useState<string | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  // Prevent click from firing after touchend opens the room
+  const wasTouchRef = useRef(false);
 
   const blueSlots = floor === "atas" ? ATAS_BLUE : BAWAH_BLUE;
   const graySlots = floor === "atas" ? ATAS_GRAY : BAWAH_GRAY;
@@ -283,12 +290,72 @@ export function FloorPlanChart({
     return map;
   }, [rooms]);
 
+  // Swipe-to-explore: drag finger over floor plan to preview rooms, lift to open
+  useEffect(() => {
+    if (mode !== "visitor") return;
+    const el = containerRef.current;
+    if (!el) return;
+
+    // Local mutable variable shared across all handlers in this closure
+    let currentSlotId: string | null = null;
+
+    const getSlotIdAt = (clientX: number, clientY: number): string | null => {
+      const target = document.elementFromPoint(clientX, clientY) as Element | null;
+      return target?.closest("[data-slot-id]")?.getAttribute("data-slot-id") ?? null;
+    };
+
+    const handleTouchStart = (e: TouchEvent) => {
+      const touch = e.touches[0];
+      currentSlotId = getSlotIdAt(touch.clientX, touch.clientY);
+      setTouchHoveredId(currentSlotId);
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      e.preventDefault(); // lock page scroll while exploring floor plan
+      const touch = e.touches[0];
+      currentSlotId = getSlotIdAt(touch.clientX, touch.clientY);
+      setTouchHoveredId(currentSlotId);
+    };
+
+    const handleTouchEnd = () => {
+      if (currentSlotId) {
+        const room = roomMap.get(currentSlotId);
+        if (room) {
+          wasTouchRef.current = true;
+          onRoomClick?.(room);
+          // Clear flag after click event fires (~300ms later)
+          setTimeout(() => { wasTouchRef.current = false; }, 400);
+        }
+      }
+      currentSlotId = null;
+      setTouchHoveredId(null);
+    };
+
+    const handleTouchCancel = () => {
+      currentSlotId = null;
+      setTouchHoveredId(null);
+    };
+
+    el.addEventListener("touchstart", handleTouchStart, { passive: true });
+    el.addEventListener("touchmove", handleTouchMove, { passive: false });
+    el.addEventListener("touchend", handleTouchEnd);
+    el.addEventListener("touchcancel", handleTouchCancel);
+
+    return () => {
+      el.removeEventListener("touchstart", handleTouchStart);
+      el.removeEventListener("touchmove", handleTouchMove);
+      el.removeEventListener("touchend", handleTouchEnd);
+      el.removeEventListener("touchcancel", handleTouchCancel);
+    };
+  }, [mode, roomMap, onRoomClick]);
+
   const grayBackground = isDarkMode
     ? "linear-gradient(to bottom right, #334155, #475569, #64748b)"
     : "linear-gradient(to bottom right, #f1f5f9, #e2e8f0, #cbd5e1)";
 
   return (
     <div
+      ref={containerRef}
       className={`relative w-full rounded-2xl overflow-visible border ${
         isDarkMode ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-white"
       }`}
@@ -315,28 +382,32 @@ export function FloorPlanChart({
         const room = roomMap.get(slotId);
         const hasRoom = !!room;
         const isHovered = hoveredId === slotId;
+        const isTouchHovered = touchHoveredId === slotId;
+        const showTooltip = isHovered || isTouchHovered;
         const tooltipBelow = s.t < 18;
 
         const isClickable = mode === "admin" || hasRoom;
+        const isActive = (isHovered || isTouchHovered) && isClickable;
 
-        const blueBackground = (isHovered && isClickable)
+        const blueBackground = isActive
           ? "linear-gradient(to bottom right, #60a5fa, #2563eb, #1d4ed8)"
           : "linear-gradient(to bottom right, #3b82f6, #1d4ed8, #1e3a8a)";
 
         return (
           <div
             key={slotId}
+            data-slot-id={slotId}
             style={{
               position: "absolute",
               left: `${s.l}%`,
               top: `${s.t}%`,
               width: `${s.w}%`,
               height: `${s.h}%`,
-              zIndex: isHovered ? 40 : 2,
+              zIndex: isActive ? 40 : 2,
               background: blueBackground,
               boxShadow: hasRoom && mode === "admin"
                 ? "inset 0 0 0 2px #34d399"
-                : isHovered && isClickable
+                : isActive
                 ? "0 4px 12px rgba(30,58,138,0.5)"
                 : undefined,
               cursor: isClickable ? "pointer" : "default",
@@ -345,8 +416,13 @@ export function FloorPlanChart({
             onMouseEnter={() => { if (isClickable) setHoveredId(slotId); }}
             onMouseLeave={() => setHoveredId(null)}
             onClick={() => {
-              if (mode === "admin") onSlotClick?.(slotId, room, s);
-              else if (hasRoom) onRoomClick?.(room);
+              // Touch path is handled by touchend; skip to avoid double-open
+              if (wasTouchRef.current) return;
+              if (mode === "admin") {
+                onSlotClick?.(slotId, room, s);
+              } else if (hasRoom) {
+                onRoomClick?.(room);
+              }
             }}
           >
             {/* Admin: filled indicator */}
@@ -373,8 +449,8 @@ export function FloorPlanChart({
               </span>
             )}
 
-            {/* Visitor: hover tooltip */}
-            {mode === "visitor" && hasRoom && isHovered && (
+            {/* Visitor: tooltip — hover (desktop) or swipe-over (mobile) */}
+            {mode === "visitor" && hasRoom && showTooltip && (
               <div
                 style={{
                   position: "absolute",
