@@ -385,6 +385,8 @@ export function FloorPlanChart({
         const isTouchHovered = touchHoveredId === slotId;
         const showTooltip = isHovered || isTouchHovered;
         const tooltipBelow = s.t < 18;
+        const isVerticalRoom = s.h > s.w * 1.55;
+        const isCompactRoom = s.w < 4.25 || s.h < 3.2;
 
         const isClickable = mode === "admin" || hasRoom;
         const isActive = (isHovered || isTouchHovered) && isClickable;
@@ -449,6 +451,45 @@ export function FloorPlanChart({
               </span>
             )}
 
+            {/* Visitor: persistent room name; the tooltip still shows the full name on hover / swipe */}
+            {mode === "visitor" && hasRoom && (
+              <span
+                aria-hidden="true"
+                style={{
+                  position: "absolute",
+                  left: "50%",
+                  top: "50%",
+                  width: isVerticalRoom
+                    ? `${Math.max(100, (s.h / (s.w * 0.8583)) * 100)}%`
+                    : "calc(100% - 3px)",
+                  maxHeight: isVerticalRoom ? "none" : "calc(100% - 2px)",
+                  transform: isVerticalRoom
+                    ? "translate(-50%, -50%) rotate(-90deg)"
+                    : "translate(-50%, -50%)",
+                  display: "-webkit-box",
+                  WebkitBoxOrient: "vertical",
+                  WebkitLineClamp: isCompactRoom ? 1 : 2,
+                  overflow: "hidden",
+                  color: "rgba(255,255,255,0.96)",
+                  fontFamily: "'Manrope', system-ui, sans-serif",
+                  fontSize: isCompactRoom
+                    ? "clamp(0.2rem, 0.42vw, 0.42rem)"
+                    : "clamp(0.24rem, 0.55vw, 0.56rem)",
+                  fontWeight: 800,
+                  lineHeight: 1.05,
+                  letterSpacing: "-0.015em",
+                  textAlign: "center",
+                  textOverflow: "ellipsis",
+                  textShadow: "0 1px 2px rgba(15,23,42,1), 0 0 4px rgba(15,23,42,0.55)",
+                  pointerEvents: "none",
+                  opacity: isActive ? 1 : 0.9,
+                  transition: "opacity 0.15s ease",
+                }}
+              >
+                {room.nama_ruangan}
+              </span>
+            )}
+
             {/* Visitor: tooltip — hover (desktop) or swipe-over (mobile) */}
             {mode === "visitor" && hasRoom && showTooltip && (
               <div
@@ -462,8 +503,9 @@ export function FloorPlanChart({
                   padding: "5px 10px",
                   background: "#0f172a",
                   color: "white",
+                  fontFamily: "'Manrope', system-ui, sans-serif",
                   fontSize: "0.68rem",
-                  fontWeight: 600,
+                  fontWeight: 800,
                   borderRadius: "8px",
                   boxShadow: "0 4px 16px rgba(0,0,0,0.5)",
                   pointerEvents: "none",
