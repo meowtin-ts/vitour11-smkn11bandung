@@ -39,6 +39,9 @@ interface VirtualTour {
   }>;
   autoRotate?: boolean;
   compass?: boolean;
+  multiResBasePath?: string;
+  multiResMaxLevel?: number;
+  multiResCubeResolution?: number;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -49,6 +52,167 @@ declare global {
   }
 }
 
+// ─── Wave Loading Screen ──────────────────────────────────────────────────────
+// Day: bright ice-cream palette  |  Night: vivid but not heavy
+const WAVE_STOPS_DAY = [
+  { offset: "0%",   color: "#ff90b3" }, // strawberry
+  { offset: "20%",  color: "#ffb347" }, // peach
+  { offset: "40%",  color: "#ffe066" }, // lemon
+  { offset: "60%",  color: "#72e5c0" }, // mint
+  { offset: "80%",  color: "#7dd3fc" }, // sky
+  { offset: "100%", color: "#c4a7e7" }, // lavender
+];
+const WAVE_STOPS_NIGHT = [
+  { offset: "0%",   color: "#f472b6" }, // pink
+  { offset: "20%",  color: "#fb923c" }, // orange
+  { offset: "40%",  color: "#fbbf24" }, // amber
+  { offset: "60%",  color: "#34d399" }, // emerald
+  { offset: "80%",  color: "#60a5fa" }, // blue
+  { offset: "100%", color: "#a78bfa" }, // violet
+];
+
+function PreloadingScreen({ pct, onSkip, isDarkMode }: { pct: number; onSkip: () => void; isDarkMode: boolean }) {
+  const wavePath = useRef<SVGPathElement | null>(null);
+  const metaRef = useRef<HTMLDivElement | null>(null);
+  const rafRef = useRef<number>(0);
+  const progressRef = useRef(0);
+  const pctRef = useRef(pct);
+  const t0Ref = useRef(performance.now());
+
+  // Keep pctRef in sync without restarting the loop
+  useEffect(() => { pctRef.current = pct; }, [pct]);
+
+  useEffect(() => {
+    const run = (now: number) => {
+      const t = (now - t0Ref.current) / 1000;
+      const target = pctRef.current;
+      progressRef.current += (target - progressRef.current) * 0.06;
+      if (target >= 100 && progressRef.current > 99.5) progressRef.current = 100;
+
+      const el = wavePath.current;
+      if (el) {
+        const W = 1000, top = 40, bottom = 290;
+        const p = progressRef.current;
+        const y = bottom - (bottom - top) * p / 100;
+        const amp = 26 * Math.sin(Math.PI * Math.min(p, 100) / 100) + 4;
+        let d = `M0 ${y}`;
+        for (let x = 0; x <= W; x += 20) {
+          const yy = y + Math.sin(x / 110 + t * 2.2) * amp + Math.sin(x / 47 - t * 1.4) * amp * 0.25;
+          d += ` L${x} ${yy.toFixed(1)}`;
+        }
+        d += ` L${W} 320 L0 320 Z`;
+        el.setAttribute("d", d);
+      }
+
+      if (metaRef.current) {
+        metaRef.current.textContent = `loading...  ${Math.round(progressRef.current)} %`;
+      }
+      rafRef.current = requestAnimationFrame(run);
+    };
+    rafRef.current = requestAnimationFrame(run);
+    return () => cancelAnimationFrame(rafRef.current);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const stops = isDarkMode ? WAVE_STOPS_NIGHT : WAVE_STOPS_DAY;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 select-none overflow-hidden flex items-center justify-center"
+      style={{ background: isDarkMode ? "#0f1117" : "#eef4ff", transition: "background 0.4s ease" }}
+    >
+      <div style={{ width: "min(82vw, 1400px)", position: "relative" }}>
+        <svg
+          viewBox="0 0 1000 300"
+          style={{ display: "block", width: "100%", height: "auto", overflow: "visible" }}
+          role="img"
+          aria-label="vitour11, memuat"
+        >
+          <defs>
+            <linearGradient id="fill-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+              {stops.map((s) => (
+                <stop key={s.offset} offset={s.offset} stopColor={s.color} />
+              ))}
+            </linearGradient>
+            <clipPath id="txt-clip">
+              <text
+                fontFamily="'Archivo Black', 'Arial Black', Impact, sans-serif"
+                fontSize="300"
+                letterSpacing="-6"
+                x="0"
+                y="268"
+                textLength="1000"
+                lengthAdjust="spacingAndGlyphs"
+              >
+                vitour11
+              </text>
+            </clipPath>
+          </defs>
+          {/* Ghost text */}
+          <text
+            fontFamily="'Archivo Black', 'Arial Black', Impact, sans-serif"
+            fontSize="300"
+            letterSpacing="-6"
+            x="0"
+            y="268"
+            textLength="1000"
+            lengthAdjust="spacingAndGlyphs"
+            fill={isDarkMode ? "#1a1030" : "#dde8f8"}
+          >
+            vitour11
+          </text>
+          {/* Colorful wave fill clipped to text shape */}
+          <g clipPath="url(#txt-clip)">
+            <path ref={wavePath} fill="url(#fill-grad)" d="" />
+          </g>
+        </svg>
+
+        {/* loading % — right-aligned below SVG */}
+        <div
+          ref={metaRef}
+          style={{
+            position: "absolute",
+            right: 0,
+            top: "100%",
+            marginTop: "8px",
+            color: isDarkMode ? "rgba(167,139,250,0.55)" : "rgba(255,144,179,0.65)",
+            fontFamily: "'Plus Jakarta Sans', 'Helvetica Neue', Arial, sans-serif",
+            fontSize: "clamp(13px, 1.2vw, 20px)",
+            fontWeight: 500,
+            whiteSpace: "pre",
+            letterSpacing: "0.08em",
+          }}
+        >
+          loading...  0 %
+        </div>
+      </div>
+
+      {/* Skip */}
+      <button
+        onClick={onSkip}
+        style={{
+          position: "absolute",
+          bottom: "2rem",
+          right: "2rem",
+          color: isDarkMode ? "rgba(167,139,250,0.3)" : "rgba(255,144,179,0.4)",
+          fontSize: "0.75rem",
+          letterSpacing: "0.2em",
+          textTransform: "lowercase",
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          transition: "color 0.2s",
+          fontFamily: "'Plus Jakarta Sans', sans-serif",
+        }}
+        onMouseEnter={e => (e.currentTarget.style.color = isDarkMode ? "rgba(167,139,250,0.75)" : "rgba(255,144,179,0.85)")}
+        onMouseLeave={e => (e.currentTarget.style.color = isDarkMode ? "rgba(167,139,250,0.3)" : "rgba(255,144,179,0.4)")}
+      >
+        skip
+      </button>
+    </div>
+  );
+}
+
 export function VirtualTourPage() {
   const { isDarkMode, toggleDarkMode } = useDarkMode();
   const { isPlaying, toggleAudio } = useAudio();
@@ -57,19 +221,21 @@ export function VirtualTourPage() {
   const [tours, setTours] = useState<VirtualTour[]>([]);
   const [currentTour, setCurrentTour] = useState<VirtualTour | null>(null);
   const [loading, setLoading] = useState(true);
+  const [preloading, setPreloading] = useState(false);
+  const [preloadedCount, setPreloadedCount] = useState(0);
+  const [totalToPreload, setTotalToPreload] = useState(0);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const panoramaRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<any>(null);
   const toursRef = useRef<VirtualTour[]>([]);
+  // Keep strong refs to prevent browser GC of preloaded images
+  const preloadedImagesRef = useRef<HTMLImageElement[]>([]);
 
   // Check if coming from admin dashboard
   const fromAdmin = location.state?.from === 'admin';
 
-  // Log error if Pannellum fails to load
   useEffect(() => {
-    if (pannellumError) {
-      console.error("Gagal memuat Pannellum: " + pannellumError);
-    }
+    if (pannellumError) console.error("Gagal memuat Pannellum:", pannellumError);
   }, [pannellumError]);
 
   useEffect(() => {
@@ -77,14 +243,19 @@ export function VirtualTourPage() {
   }, []);
 
   useEffect(() => {
-    if (currentTour && panoramaRef.current && pannellumLoaded) {
-      // Small delay to ensure container has stable dimensions
-      const timer = setTimeout(() => {
-        initPannellum();
-      }, 50);
-      return () => clearTimeout(timer);
-    }
+    // Tunggu sampai loading screen selesai: panorama pertama baru diinisialisasi
+    // setelah container benar-benar tampil & ukurannya stabil.
+    if (!currentTour || !panoramaRef.current || !pannellumLoaded || preloading) return;
 
+    const timer = setTimeout(() => {
+      initPannellum();
+    }, 50);
+
+    return () => clearTimeout(timer);
+  }, [currentTour?.id, pannellumLoaded, preloading]);
+
+  // Destroy viewer hanya saat halaman ditinggalkan
+  useEffect(() => {
     return () => {
       if (viewerRef.current) {
         try {
@@ -92,9 +263,10 @@ export function VirtualTourPage() {
         } catch (e) {
           console.error("Error destroying viewer:", e);
         }
+        viewerRef.current = null;
       }
     };
-  }, [currentTour?.id, pannellumLoaded]);
+  }, []);
 
   const fetchTours = async () => {
     try {
@@ -111,12 +283,14 @@ export function VirtualTourPage() {
       if (error) {
         console.error("Fetch panoramas error:", error);
         setTours([]);
+        setLoading(false);
         return;
       }
 
       if (!data || data.length === 0) {
         console.info("Belum ada data virtual tour.");
         setTours([]);
+        setLoading(false);
         return;
       }
 
@@ -136,6 +310,9 @@ export function VirtualTourPage() {
         },
         autoRotate: row.auto_rotate,
         compass: row.compass,
+        multiResBasePath: row.multi_res_base_path || undefined,
+        multiResMaxLevel: row.multi_res_max_level || undefined,
+        multiResCubeResolution: row.multi_res_cube_resolution || undefined,
         hotspots: row.hotspots || [],
         createdAt: row.created_at,
         updatedAt: row.updated_at,
@@ -144,35 +321,55 @@ export function VirtualTourPage() {
       toursRef.current = mappedTours;
       setTours(mappedTours);
       setCurrentTour(mappedTours[0]);
-      console.log("✅ Loaded", mappedTours.length, "panoramas for virtual tour");
-
-      // Debug: Show panorama data
-      if (mappedTours.length > 0) {
-        console.log("🔍 First panorama data:", {
-          name: mappedTours[0].name,
-          panoramaUrl: mappedTours[0].panoramaUrl,
-          hotspots: mappedTours[0].hotspots,
-          hotspotCount: mappedTours[0].hotspots?.length || 0
-        });
-      }
+      setLoading(false);
+      // Start preloading all panoramas right after data is ready
+      await preloadAllPanoramas(mappedTours);
     } catch (error) {
       console.error("Fetch tours error:", error);
       setTours([]);
-    } finally {
       setLoading(false);
     }
   };
 
+  const preloadAllPanoramas = async (tourList: VirtualTour[]) => {
+    const urls = tourList
+      .map((t) => t.panoramaUrl)
+      .filter((url): url is string => Boolean(url));
+
+    if (urls.length === 0) return;
+
+    setPreloading(true);
+    setTotalToPreload(urls.length);
+    setPreloadedCount(0);
+    preloadedImagesRef.current = [];
+
+    await Promise.allSettled(
+      urls.map(
+        (url) =>
+          new Promise<void>((resolve) => {
+            const img = new Image();
+            preloadedImagesRef.current.push(img);
+            img.onload = () => {
+              setPreloadedCount((prev) => prev + 1);
+              resolve();
+            };
+            img.onerror = () => {
+              setPreloadedCount((prev) => prev + 1);
+              resolve();
+            };
+            img.src = url;
+          })
+      )
+    );
+
+    setPreloading(false);
+  };
+
   const loadScene = (targetId: string) => {
-    // Always read from ref to avoid stale closure issues
-    const allTours = toursRef.current;
-    const targetTour = allTours.find((t) => t.id === targetId);
+    const targetTour = toursRef.current.find((t) => t.id === targetId);
     if (targetTour) {
-      console.log("🔄 Navigating to:", targetTour.name, "(ID:", targetId, ")");
       setCurrentTour(targetTour);
       setDropdownOpen(false);
-    } else {
-      console.warn("⚠️ Target tour not found for ID:", targetId, ". Available IDs:", allTours.map(t => t.id));
     }
   };
 
@@ -188,6 +385,11 @@ export function VirtualTourPage() {
       }
     }
 
+    if (typeof window.pannellum?.viewer !== "function") {
+      console.error("Pannellum belum siap: window.pannellum tidak tersedia");
+      return;
+    }
+
     try {
       // Prepare hot spots with click handlers
       const hotspots = (currentTour.hotspots || []).map((hs: any) => {
@@ -197,11 +399,8 @@ export function VirtualTourPage() {
 
         // Check if hotspot uses old X/Y format
         if (hs.x !== undefined && hs.y !== undefined) {
-          // X% (0-100) → Yaw (-180 to 180)
           yaw = parseFloat(((hs.x - 50) * 3.6).toFixed(1));
-          // Y% (0-100) → Pitch (-90 to 90)
           pitch = parseFloat(((50 - hs.y) * 1.8).toFixed(1));
-          console.log(`🔄 Converting hotspot: X:${hs.x}% Y:${hs.y}% → Pitch:${pitch}° Yaw:${yaw}°`);
         }
 
         const hotspotConfig: any = {
@@ -258,7 +457,6 @@ export function VirtualTourPage() {
         // Add click handler using Pannellum's official API
         if (hs.type === "scene" && hs.targetId) {
           hotspotConfig.clickHandlerFunc = () => {
-            console.log("🖱️ Scene hotspot clicked! Target:", hs.targetId);
             loadScene(hs.targetId);
           };
         } else if (hs.type === "info") {
@@ -270,23 +468,8 @@ export function VirtualTourPage() {
         return hotspotConfig;
       });
 
-      console.log("🔍 DEBUG: Hotspots to render:", hotspots);
-      console.log("🔍 DEBUG: Total hotspots:", hotspots.length);
-      console.log("🔍 DEBUG: Panorama URL to load:", currentTour.panoramaUrl);
-      console.log("🧪 COPY URL INI DAN BUKA DI TAB BARU UNTUK TEST APAKAH BISA DIAKSES:", currentTour.panoramaUrl);
-      console.log("🔍 DEBUG: Current tour data:", {
-        name: currentTour.name,
-        autoRotate: currentTour.autoRotate,
-        compass: currentTour.compass,
-        initialPitch: currentTour.initialView?.pitch,
-        initialYaw: currentTour.initialView?.yaw,
-        initialHfov: currentTour.initialView?.hfov
-      });
-
-      // Initialize Pannellum
-      viewerRef.current = window.pannellum.viewer(panoramaRef.current, {
-        type: "equirectangular",
-        panorama: currentTour.panoramaUrl,
+      // Shared viewer options
+      const sharedConfig = {
         autoLoad: true,
         autoRotate: currentTour.autoRotate ? -2 : 0,
         compass: currentTour.compass || false,
@@ -296,34 +479,21 @@ export function VirtualTourPage() {
         mouseZoom: true,
         draggable: true,
         disableKeyboardCtrl: false,
-        dynamicUpdate: false,
         pitch: currentTour.initialView?.pitch || 0,
         yaw: currentTour.initialView?.yaw || 0,
         hfov: currentTour.initialView?.hfov || 100,
         minHfov: 50,
         maxHfov: 120,
         hotSpots: hotspots,
-      });
+      };
 
-      console.log("✅ Pannellum initialized for:", currentTour.name);
-      console.log("✅ Hotspots rendered:", hotspots.length);
-
-      // Add event listener to check if panorama loads successfully
-      viewerRef.current.on('load', () => {
-        console.log("✅ Panorama image loaded successfully!");
-      });
-
-      viewerRef.current.on('error', (err: any) => {
-        console.error("❌ Error loading panorama image:", err);
-        console.error("❌ Panorama URL that failed:", currentTour.panoramaUrl);
-      });
-
-      viewerRef.current.on('errorcleared', () => {
-        console.log("✅ Error cleared, panorama loading...");
+      viewerRef.current = window.pannellum.viewer(panoramaRef.current, {
+        type: "equirectangular",
+        panorama: currentTour.panoramaUrl,
+        ...sharedConfig,
       });
     } catch (error) {
-      console.error("❌ Pannellum initialization error:", error);
-      console.error("❌ Current tour data:", currentTour);
+      console.error("Pannellum initialization error:", error);
     }
   };
 
@@ -335,14 +505,13 @@ export function VirtualTourPage() {
   if (loading) {
     return (
       <div
-        className={`min-h-screen flex items-center justify-center ${
-          isDarkMode ? "bg-slate-900" : "bg-white"
-        }`}
+        className="min-h-screen flex items-center justify-center"
+        style={{ background: isDarkMode ? "#0f1117" : "#eef4ff", transition: "background 0.4s ease" }}
       >
         <div className="text-center">
-          <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4 text-blue-500" />
-          <p className={`${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
-            Memuat Virtual Tour...
+          <Loader2 className="w-10 h-10 animate-spin mx-auto mb-4" style={{ color: "#3b82f6" }} />
+          <p style={{ color: isDarkMode ? "rgba(148,163,184,0.5)" : "rgba(71,100,140,0.6)", fontSize: "0.8rem", letterSpacing: "0.1em", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+            menghubungkan ke server...
           </p>
         </div>
       </div>
@@ -374,20 +543,16 @@ export function VirtualTourPage() {
     );
   }
 
+  const pct = totalToPreload > 0 ? Math.round((preloadedCount / totalToPreload) * 100) : 0;
+
   return (
     <div className="fixed inset-0 w-full h-full overflow-hidden">
+      {preloading && (
+        <PreloadingScreen pct={pct} onSkip={() => setPreloading(false)} isDarkMode={isDarkMode} />
+      )}
+
       {/* Pannellum Container - Full screen */}
-      <div
-        ref={panoramaRef}
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: "100vw",
-          height: "100vh",
-          overflow: "hidden",
-        }}
-      />
+      <div ref={panoramaRef} className="absolute inset-0 w-full h-full" />
 
       {/* Top Navigation Bar */}
       <div
