@@ -593,9 +593,146 @@ function FloorPlanView({
 }) {
   const [rooms, setRooms] = useState<FloorRoom[]>([]);
   const [loading, setLoading] = useState(true);
+  const [zoom, setZoom] = useState(1);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isPseudoFullscreen, setIsPseudoFullscreen] = useState(false);
+  const [isChartDragging, setIsChartDragging] = useState(false);
+  const chartContainerRef = useRef<HTMLDivElement>(null);
+  const chartScrollRef = useRef<HTMLDivElement>(null);
+  const isChartDraggingRef = useRef(false);
+  const dragStateRef = useRef({
+    startX: 0,
+    startY: 0,
+    scrollLeft: 0,
+    scrollTop: 0,
+    moved: false,
+  });
+  const suppressRoomClickRef = useRef(false);
 
   const floorKey = floor === "lantai-atas" ? "atas" : "bawah";
   const floorLabel = floor === "lantai-atas" ? "Lantai Atas" : "Lantai Bawah";
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(document.fullscreenElement === chartContainerRef.current);
+    };
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      document.removeEventListener("webkitfullscreenchange", handleFullscreenChange);
+    };
+  }, []);
+
+  const applyChartZoom = (requestedZoom: number, focalX?: number, focalY?: number) => {
+    const viewport = chartScrollRef.current;
+    const nextZoom = Math.min(3, Math.max(1, requestedZoom));
+    if (!viewport || nextZoom === zoom) return;
+
+    const pointX = focalX ?? viewport.clientWidth / 2;
+    const pointY = focalY ?? viewport.clientHeight / 2;
+    const contentX = (viewport.scrollLeft + pointX) / zoom;
+    const contentY = (viewport.scrollTop + pointY) / zoom;
+
+    setZoom(nextZoom);
+    requestAnimationFrame(() => {
+      viewport.scrollLeft = contentX * nextZoom - pointX;
+      viewport.scrollTop = contentY * nextZoom - pointY;
+    });
+  };
+
+  const zoomIn = () => applyChartZoom(zoom + 0.5);
+  const zoomOut = () => applyChartZoom(zoom - 0.5);
+  const isChartFullscreen = isFullscreen || isPseudoFullscreen;
+
+  const handleChartMouseDown = (event: ReactMouseEvent<HTMLDivElement>) => {
+    if (event.button !== 0 || (event.target as HTMLElement).closest("button")) return;
+    const viewport = chartScrollRef.current;
+    if (!viewport) return;
+    const canScroll =
+      viewport.scrollWidth > viewport.clientWidth ||
+      viewport.scrollHeight > viewport.clientHeight;
+    if (!canScroll) return;
+    event.preventDefault();
+    dragStateRef.current = {
+      startX: event.clientX,
+      startY: event.clientY,
+      scrollLeft: viewport.scrollLeft,
+      scrollTop: viewport.scrollTop,
+      moved: false,
+    };
+    isChartDraggingRef.current = true;
+    setIsChartDragging(true);
+  };
+
+  const handleChartMouseMove = (event: ReactMouseEvent<HTMLDivElement>) => {
+    if (!isChartDraggingRef.current) return;
+    const viewport = chartScrollRef.current;
+    if (!viewport) return;
+    const deltaX = event.clientX - dragStateRef.current.startX;
+    const deltaY = event.clientY - dragStateRef.current.startY;
+    if (Math.abs(deltaX) > 3 || Math.abs(deltaY) > 3) {
+      dragStateRef.current.moved = true;
+    }
+    viewport.scrollLeft = dragStateRef.current.scrollLeft - deltaX;
+    viewport.scrollTop = dragStateRef.current.scrollTop - deltaY;
+  };
+
+  const stopChartDragging = () => {
+    if (!isChartDraggingRef.current) return;
+    suppressRoomClickRef.current = dragStateRef.current.moved;
+    isChartDraggingRef.current = false;
+    setIsChartDragging(false);
+    setTimeout(() => {
+      suppressRoomClickRef.current = false;
+    }, 0);
+  };
+
+  const toggleChartFullscreen = () => {
+    if (isPseudoFullscreen) {
+      setIsPseudoFullscreen(false);
+      return;
+    }
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+      return;
+    }
+    const element = chartContainerRef.current;
+    if (!element?.requestFullscreen) {
+      setIsPseudoFullscreen(true);
+      return;
+    }
+    element.requestFullscreen().catch(() => setIsPseudoFullscreen(true));
+  };
+
+  useEffect(() => {
+    if (!isPseudoFullscreen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isPseudoFullscreen]);
+
+  useEffect(() => {
+    const viewport = chartScrollRef.current;
+    if (!viewport || loading) return;
+
+    const handleWheel = (event: WheelEvent) => {
+      event.preventDefault();
+
+      // The wheel never changes zoom. On the page it scrolls the document;
+      // in fullscreen it scrolls the enlarged floor plan vertically.
+      if (isChartFullscreen) {
+        viewport.scrollTop += event.deltaY;
+      } else {
+        window.scrollBy({ top: event.deltaY, left: 0, behavior: "auto" });
+      }
+    };
+
+    viewport.addEventListener("wheel", handleWheel, { passive: false });
+    return () => viewport.removeEventListener("wheel", handleWheel);
+  }, [isChartFullscreen, loading]);
 
   useEffect(() => {
     setLoading(true);
@@ -639,14 +776,104 @@ function FloorPlanView({
             <Loader2 size={36} className="animate-spin text-blue-500" />
           </div>
         ) : (
-          <div className="max-w-4xl mx-auto">
-            <FloorPlanChart
-              floor={floorKey}
-              rooms={rooms}
-              mode="visitor"
-              isDarkMode={isDarkMode}
-              onRoomClick={onRoomClick}
-            />
+          <div
+            ref={chartContainerRef}
+            className={`denah-fullscreen-container relative mx-auto overflow-hidden ${
+              isPseudoFullscreen
+                ? "fixed inset-0 z-[100] max-w-none rounded-none"
+                : "max-w-4xl rounded-2xl"
+            } ${
+              isDarkMode ? "bg-slate-950" : "bg-slate-100"
+            }`}
+          >
+            <div
+              className={`absolute right-3 top-3 z-[70] flex items-center gap-1.5 rounded-2xl border p-1.5 shadow-xl backdrop-blur-md transition-colors ${
+                isDarkMode
+                  ? "border-slate-700 bg-slate-800/90 text-white"
+                  : "border-slate-200 bg-white/90 text-slate-700"
+              }`}
+            >
+              <span className="min-w-11 px-1 text-center font-['Manrope'] text-[11px] font-extrabold tabular-nums">
+                {Math.round(zoom * 100)}%
+              </span>
+              <button
+                type="button"
+                onClick={zoomOut}
+                disabled={zoom <= 1}
+                title="Perkecil denah"
+                aria-label="Perkecil denah"
+                className={`flex h-9 w-9 items-center justify-center rounded-xl transition-colors disabled:cursor-not-allowed disabled:opacity-35 ${
+                  isDarkMode ? "hover:bg-slate-700" : "hover:bg-slate-100"
+                }`}
+              >
+                <ZoomOut size={17} />
+              </button>
+              <button
+                type="button"
+                onClick={zoomIn}
+                disabled={zoom >= 3}
+                title="Perbesar denah"
+                aria-label="Perbesar denah"
+                className={`flex h-9 w-9 items-center justify-center rounded-xl transition-colors disabled:cursor-not-allowed disabled:opacity-35 ${
+                  isDarkMode ? "hover:bg-slate-700" : "hover:bg-slate-100"
+                }`}
+              >
+                <ZoomIn size={17} />
+              </button>
+              <button
+                type="button"
+                onClick={toggleChartFullscreen}
+                title={isChartFullscreen ? "Keluar dari layar penuh" : "Tampilkan layar penuh"}
+                aria-label={isChartFullscreen ? "Keluar dari layar penuh" : "Tampilkan layar penuh"}
+                className={`flex h-9 w-9 items-center justify-center rounded-xl transition-colors ${
+                  isDarkMode ? "hover:bg-slate-700" : "hover:bg-slate-100"
+                }`}
+              >
+                {isChartFullscreen ? <Minimize2 size={17} /> : <Maximize2 size={17} />}
+              </button>
+            </div>
+
+            <div
+              ref={chartScrollRef}
+              className={`overflow-auto overscroll-contain select-none ${
+                zoom > 1 || isChartFullscreen
+                  ? isChartDragging
+                    ? "cursor-grabbing"
+                    : "cursor-crosshair"
+                  : "cursor-default"
+              } ${
+                isChartFullscreen
+                  ? "h-screen p-4 pt-16"
+                  : zoom > 1
+                    ? "h-[calc(100svh-10rem)]"
+                    : "max-h-[calc(100svh-10rem)] md:max-h-none"
+              }`}
+              style={{ WebkitOverflowScrolling: "touch", touchAction: zoom > 1 ? "pan-x pan-y" : "auto" }}
+              onMouseDown={handleChartMouseDown}
+              onMouseMove={handleChartMouseMove}
+              onMouseUp={stopChartDragging}
+              onMouseLeave={stopChartDragging}
+              onClickCapture={(event) => {
+                if (!suppressRoomClickRef.current) return;
+                event.preventDefault();
+                event.stopPropagation();
+              }}
+            >
+              <div
+                className="transition-[width] duration-200 ease-out"
+                style={{ width: `${zoom * 100}%`, minWidth: "100%" }}
+              >
+                <FloorPlanChart
+                  floor={floorKey}
+                  rooms={rooms}
+                  mode="visitor"
+                  isDarkMode={isDarkMode}
+                  enableSwipeExplore={zoom === 1}
+                  displayScale={zoom}
+                  onRoomClick={onRoomClick}
+                />
+              </div>
+            </div>
           </div>
         )}
       </div>

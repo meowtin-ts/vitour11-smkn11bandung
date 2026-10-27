@@ -262,6 +262,8 @@ interface FloorPlanChartProps {
   rooms: FloorRoom[];
   mode: "admin" | "visitor";
   isDarkMode?: boolean;
+  enableSwipeExplore?: boolean;
+  displayScale?: number;
   onSlotClick?: (slotId: string, room: FloorRoom | undefined, slot: Slot) => void;
   onRoomClick?: (room: FloorRoom) => void;
 }
@@ -271,6 +273,8 @@ export function FloorPlanChart({
   rooms,
   mode,
   isDarkMode = false,
+  enableSwipeExplore = true,
+  displayScale = 1,
   onSlotClick,
   onRoomClick,
 }: FloorPlanChartProps) {
@@ -292,7 +296,7 @@ export function FloorPlanChart({
 
   // Swipe-to-explore: drag finger over floor plan to preview rooms, lift to open
   useEffect(() => {
-    if (mode !== "visitor") return;
+    if (mode !== "visitor" || !enableSwipeExplore) return;
     const el = containerRef.current;
     if (!el) return;
 
@@ -347,7 +351,7 @@ export function FloorPlanChart({
       el.removeEventListener("touchend", handleTouchEnd);
       el.removeEventListener("touchcancel", handleTouchCancel);
     };
-  }, [mode, roomMap, onRoomClick]);
+  }, [mode, roomMap, onRoomClick, enableSwipeExplore]);
 
   const grayBackground = isDarkMode
     ? "linear-gradient(to bottom right, #334155, #475569, #64748b)"
@@ -359,7 +363,7 @@ export function FloorPlanChart({
       className={`relative w-full rounded-2xl overflow-visible border ${
         isDarkMode ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-white"
       }`}
-      style={{ aspectRatio: "0.8583" }}
+      style={{ aspectRatio: "0.8583", containerType: "inline-size" }}
     >
       {/* Gray slots — non-interactive */}
       {graySlots.map((s, i) => (
@@ -468,13 +472,13 @@ export function FloorPlanChart({
                     : "translate(-50%, -50%)",
                   display: "-webkit-box",
                   WebkitBoxOrient: "vertical",
-                  WebkitLineClamp: isCompactRoom ? 1 : 2,
+                  WebkitLineClamp: displayScale >= 1.5 ? 2 : isCompactRoom ? 1 : 2,
                   overflow: "hidden",
                   color: "rgba(255,255,255,0.96)",
                   fontFamily: "'Manrope', system-ui, sans-serif",
                   fontSize: isCompactRoom
-                    ? "clamp(0.2rem, 0.42vw, 0.42rem)"
-                    : "clamp(0.24rem, 0.55vw, 0.56rem)",
+                    ? "clamp(0.22rem, 0.56cqw, 0.52rem)"
+                    : "clamp(0.28rem, 0.72cqw, 0.72rem)",
                   fontWeight: 800,
                   lineHeight: 1.05,
                   letterSpacing: "-0.015em",
