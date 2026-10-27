@@ -10,14 +10,13 @@ import {
   Save,
   LayoutGrid,
   List,
-  ChevronLeft,
-  ChevronRight,
   ArrowUpDown,
 } from "lucide-react";
 import { useDarkMode } from "../contexts/DarkModeContext";
 import { getSupabaseClient } from "/utils/supabase/client";
 import { toast } from "sonner";
 import { FloorPlanChart, type FloorRoom } from "../components/FloorPlanChart";
+import { AdminPagination } from "../components/AdminPagination";
 
 // ── Extended room type ─────────────────────────────────────────────────
 type DbRoom = FloorRoom;
@@ -478,12 +477,12 @@ export function AdminDenahRuangan() {
   const [search, setSearch] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [filterLantai, setFilterLantai] = useState<"semua" | "atas" | "bawah">("semua");
   const [filterGedung, setFilterGedung] = useState("semua");
   const [filterKondisi, setFilterKondisi] = useState("semua");
   const [filterInventaris, setFilterInventaris] = useState("semua");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [currentPage, setCurrentPage] = useState(1);
-  const [jumpPage, setJumpPage] = useState("");
   const PAGE_SIZE = 10;
 
   // Modal state
@@ -504,7 +503,9 @@ export function AdminDenahRuangan() {
   };
 
   useEffect(() => { fetchRooms(); }, []);
-  useEffect(() => { setCurrentPage(1); }, [search, filterGedung, filterKondisi, filterInventaris, sortDir]);
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, filterLantai, filterGedung, filterKondisi, filterInventaris, sortDir]);
 
   const openModal = (slotId: string, lantai: "atas" | "bawah", room?: FloorRoom) => {
     setModalSlotId(slotId);
@@ -564,11 +565,12 @@ export function AdminDenahRuangan() {
         r.nama_ruangan.toLowerCase().includes(search.toLowerCase()) ||
         (r.kode_ruang ?? "").toLowerCase().includes(search.toLowerCase()) ||
         (r.gedung ?? "").toLowerCase().includes(search.toLowerCase());
+      const matchLantai = filterLantai === "semua" || r.lantai === filterLantai;
       const matchGedung = filterGedung === "semua" || r.gedung === filterGedung;
       const matchKondisi = filterKondisi === "semua" || r.kondisi_ruangan === filterKondisi;
       const matchInventaris =
         filterInventaris === "semua" || ((r as any)[filterInventaris] ?? 0) > 0;
-      return matchSearch && matchGedung && matchKondisi && matchInventaris;
+      return matchSearch && matchLantai && matchGedung && matchKondisi && matchInventaris;
     })
     .sort((a, b) => {
       const cmp = a.nama_ruangan.localeCompare(b.nama_ruangan);
@@ -577,12 +579,6 @@ export function AdminDenahRuangan() {
 
   const totalPages = Math.max(1, Math.ceil(filteredRooms.length / PAGE_SIZE));
   const paginatedRooms = filteredRooms.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
-
-  const jumpTo = () => {
-    const p = parseInt(jumpPage);
-    if (!isNaN(p) && p >= 1 && p <= totalPages) setCurrentPage(p);
-    setJumpPage("");
-  };
 
   const kondisiColor = (k?: string) => {
     if (!k) return isDarkMode ? "text-slate-500" : "text-slate-400";
@@ -675,6 +671,19 @@ export function AdminDenahRuangan() {
 
             {/* Filter dropdowns + direction toggle */}
             <div className="flex flex-wrap gap-2">
+              {/* Filter: Lantai */}
+              <select
+                value={filterLantai}
+                onChange={(e) => setFilterLantai(e.target.value as "semua" | "atas" | "bawah")}
+                className={`px-3 py-2 rounded-xl border text-sm outline-none cursor-pointer ${
+                  isDarkMode ? "bg-slate-900 border-slate-700 text-slate-300" : "bg-white border-slate-200 text-slate-700"
+                }`}
+              >
+                <option value="semua">Semua Lantai</option>
+                <option value="atas">Lantai Atas</option>
+                <option value="bawah">Lantai Bawah</option>
+              </select>
+
               {/* Filter: Gedung */}
               <select
                 value={filterGedung}
@@ -860,32 +869,12 @@ export function AdminDenahRuangan() {
           </div>
 
           {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-3 pt-4">
-              <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}
-                className={`p-2 rounded-lg disabled:opacity-40 transition-colors ${isDarkMode ? "hover:bg-slate-700 text-slate-300" : "hover:bg-slate-100 text-slate-600"}`}>
-                <ChevronLeft size={16} />
-              </button>
-              <span className={`text-sm font-medium ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
-                {currentPage} / {totalPages}
-              </span>
-              <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}
-                className={`p-2 rounded-lg disabled:opacity-40 transition-colors ${isDarkMode ? "hover:bg-slate-700 text-slate-300" : "hover:bg-slate-100 text-slate-600"}`}>
-                <ChevronRight size={16} />
-              </button>
-              <div className="flex items-center gap-1.5 ml-2">
-                <span className={`text-xs ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>Ke hal:</span>
-                <input type="number" min={1} max={totalPages}
-                  value={jumpPage}
-                  onChange={(e) => setJumpPage(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && jumpTo()}
-                  onBlur={jumpTo}
-                  placeholder="—"
-                  className={`w-14 px-2 py-1 rounded-lg border text-sm text-center outline-none ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300" : "bg-white border-slate-200 text-slate-700"}`}
-                />
-              </div>
-            </div>
-          )}
+          <AdminPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            isDarkMode={isDarkMode}
+          />
         </div>
       )}
 

@@ -15,8 +15,6 @@ import {
   Loader2,
   Search,
   ArrowUpDown,
-  ChevronLeft,
-  ChevronRight,
   Filter,
 } from "lucide-react";
 import { projectId } from "/utils/supabase/info";
@@ -24,6 +22,7 @@ import { getSupabaseClient } from "/utils/supabase/client";
 import { toast } from "sonner";
 import { PanoramaUploader } from "../components/PanoramaUploader";
 import { HotspotCanvas } from "../components/HotspotCanvas";
+import { AdminPagination } from "../components/AdminPagination";
 
 interface VirtualTour {
   id: string;
@@ -47,6 +46,9 @@ interface VirtualTour {
   autoRotate?: boolean;
   compass?: boolean;
   showInDropdown?: boolean;
+  multiResBasePath?: string;
+  multiResMaxLevel?: number;
+  multiResCubeResolution?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -63,7 +65,6 @@ export function AdminPanorama() {
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [filterMenu, setFilterMenu] = useState<"all" | "visible" | "hidden" | "autoRotate" | "compass">("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const [jumpPage, setJumpPage] = useState("");
   const PAGE_SIZE = 10;
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
@@ -117,6 +118,9 @@ export function AdminPanorama() {
         },
         autoRotate: row.auto_rotate,
         compass: row.compass,
+        multiResBasePath: row.multi_res_base_path || undefined,
+        multiResMaxLevel: row.multi_res_max_level || undefined,
+        multiResCubeResolution: row.multi_res_cube_resolution || undefined,
         hotspots: row.hotspots || [],
         createdAt: row.created_at,
         updatedAt: row.updated_at,
@@ -278,6 +282,9 @@ export function AdminPanorama() {
         initial_hfov: editingTour.initialView?.hfov || 100,
         auto_rotate: editingTour.autoRotate || false,
         compass: editingTour.compass || false,
+        multi_res_base_path: editingTour.multiResBasePath?.trim() || null,
+        multi_res_max_level: editingTour.multiResMaxLevel || null,
+        multi_res_cube_resolution: editingTour.multiResCubeResolution || null,
         hotspots: convertedHotspots,
         ...(isUpdate && { updated_at: new Date().toISOString() }),
       };
@@ -339,12 +346,6 @@ export function AdminPanorama() {
 
   const totalPages = Math.max(1, Math.ceil(filteredTours.length / PAGE_SIZE));
   const paginatedTours = filteredTours.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
-
-  const jumpTo = () => {
-    const p = parseInt(jumpPage);
-    if (!isNaN(p) && p >= 1 && p <= totalPages) setCurrentPage(p);
-    setJumpPage("");
-  };
 
   const handleDelete = async (id: string) => {
     if (!token) return;
@@ -520,24 +521,21 @@ export function AdminPanorama() {
                   </p>
 
                   {/* Features */}
-                  <div className="flex gap-2 mb-4">
+                  <div className="flex flex-wrap gap-2 mb-4">
                     {tour.autoRotate && (
-                      <span
-                        className={`text-xs px-2 py-1 rounded ${
-                          isDarkMode ? "bg-blue-500/20 text-blue-300" : "bg-blue-50 text-blue-600"
-                        }`}
-                      >
+                      <span className={`text-xs px-2 py-1 rounded ${isDarkMode ? "bg-blue-500/20 text-blue-300" : "bg-blue-50 text-blue-600"}`}>
                         <Compass className="inline w-3 h-3 mr-1" />
                         Auto Rotate
                       </span>
                     )}
                     {tour.compass && (
-                      <span
-                        className={`text-xs px-2 py-1 rounded ${
-                          isDarkMode ? "bg-cyan-500/20 text-cyan-300" : "bg-cyan-50 text-cyan-600"
-                        }`}
-                      >
+                      <span className={`text-xs px-2 py-1 rounded ${isDarkMode ? "bg-cyan-500/20 text-cyan-300" : "bg-cyan-50 text-cyan-600"}`}>
                         Compass
+                      </span>
+                    )}
+                    {tour.multiResBasePath && (
+                      <span className={`text-xs px-2 py-1 rounded ${isDarkMode ? "bg-emerald-500/20 text-emerald-300" : "bg-emerald-50 text-emerald-600"}`}>
+                        Multires
                       </span>
                     )}
                   </div>
@@ -569,32 +567,12 @@ export function AdminPanorama() {
           </div>
 
           {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-3 pt-6">
-              <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}
-                className={`p-2 rounded-lg disabled:opacity-40 transition-colors ${isDarkMode ? "hover:bg-slate-700 text-slate-300" : "hover:bg-slate-100 text-slate-600"}`}>
-                <ChevronLeft size={16} />
-              </button>
-              <span className={`text-sm font-medium ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
-                {currentPage} / {totalPages}
-              </span>
-              <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}
-                className={`p-2 rounded-lg disabled:opacity-40 transition-colors ${isDarkMode ? "hover:bg-slate-700 text-slate-300" : "hover:bg-slate-100 text-slate-600"}`}>
-                <ChevronRight size={16} />
-              </button>
-              <div className="flex items-center gap-1.5 ml-2">
-                <span className={`text-xs ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>Ke hal:</span>
-                <input type="number" min={1} max={totalPages}
-                  value={jumpPage}
-                  onChange={(e) => setJumpPage(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && jumpTo()}
-                  onBlur={jumpTo}
-                  placeholder="—"
-                  className={`w-14 px-2 py-1 rounded-lg border text-sm text-center outline-none ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300" : "bg-white border-slate-200 text-slate-700"}`}
-                />
-              </div>
-            </div>
-          )}
+          <AdminPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            isDarkMode={isDarkMode}
+          />
           </>
         )}
 
@@ -728,6 +706,58 @@ export function AdminPanorama() {
                       : "bg-slate-50 border-slate-300 focus:border-blue-500"
                   } focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
                 />
+              </div>
+
+              {/* Multiresolution */}
+              <div className={`p-4 rounded-xl border ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
+                <p className={`text-sm font-semibold mb-1 ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>
+                  Multiresolution Tiles <span className={`text-xs font-normal ml-1 ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>(Opsional — untuk performa loading lebih cepat)</span>
+                </p>
+                <p className={`text-xs mb-3 ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>
+                  Isi setelah konversi dengan <code className="font-mono">generate.py</code> dan upload tiles ke Supabase Storage. Nilai maxLevel &amp; cubeResolution ada di <code className="font-mono">config.json</code> output generate.py.
+                </p>
+                <div className="space-y-3">
+                  <div>
+                    <label className={`block text-xs font-medium mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Base Path URL</label>
+                    <input
+                      type="text"
+                      value={editingTour.multiResBasePath || ""}
+                      onChange={(e) => setEditingTour({ ...editingTour, multiResBasePath: e.target.value || undefined })}
+                      className={`w-full px-3 py-2 rounded-lg border text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/20 ${isDarkMode ? "bg-slate-800 border-slate-700 focus:border-blue-500 text-slate-200 placeholder-slate-600" : "bg-white border-slate-300 focus:border-blue-500 placeholder-slate-400"}`}
+                      placeholder="https://[project].supabase.co/storage/v1/object/public/[bucket]/multires/nama-lokasi"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className={`block text-xs font-medium mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Max Level <span className="opacity-60">(dari config.json)</span></label>
+                      <input
+                        type="number"
+                        min={1} max={10}
+                        value={editingTour.multiResMaxLevel || ""}
+                        onChange={(e) => setEditingTour({ ...editingTour, multiResMaxLevel: parseInt(e.target.value) || undefined })}
+                        className={`w-full px-3 py-2 rounded-lg border text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/20 ${isDarkMode ? "bg-slate-800 border-slate-700 focus:border-blue-500 text-slate-200 placeholder-slate-600" : "bg-white border-slate-300 focus:border-blue-500 placeholder-slate-400"}`}
+                        placeholder="5"
+                      />
+                    </div>
+                    <div>
+                      <label className={`block text-xs font-medium mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Cube Resolution <span className="opacity-60">(dari config.json)</span></label>
+                      <input
+                        type="number"
+                        min={512}
+                        value={editingTour.multiResCubeResolution || ""}
+                        onChange={(e) => setEditingTour({ ...editingTour, multiResCubeResolution: parseInt(e.target.value) || undefined })}
+                        className={`w-full px-3 py-2 rounded-lg border text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/20 ${isDarkMode ? "bg-slate-800 border-slate-700 focus:border-blue-500 text-slate-200 placeholder-slate-600" : "bg-white border-slate-300 focus:border-blue-500 placeholder-slate-400"}`}
+                        placeholder="5376"
+                      />
+                    </div>
+                  </div>
+                  {editingTour.multiResBasePath && (
+                    <div className={`flex items-center gap-1.5 text-xs ${isDarkMode ? "text-emerald-400" : "text-emerald-600"}`}>
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
+                      Multires aktif — viewer akan memuat tile bertahap
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Features */}
