@@ -309,12 +309,23 @@ export function FloorPlanChart({
     };
 
     const handleTouchStart = (e: TouchEvent) => {
+      // Two-finger gestures are reserved for pinch-to-zoom by the parent canvas.
+      if (e.touches.length !== 1) {
+        currentSlotId = null;
+        setTouchHoveredId(null);
+        return;
+      }
       const touch = e.touches[0];
       currentSlotId = getSlotIdAt(touch.clientX, touch.clientY);
       setTouchHoveredId(currentSlotId);
     };
 
     const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length !== 1) {
+        currentSlotId = null;
+        setTouchHoveredId(null);
+        return;
+      }
       e.preventDefault(); // lock page scroll while exploring floor plan
       const touch = e.touches[0];
       currentSlotId = getSlotIdAt(touch.clientX, touch.clientY);

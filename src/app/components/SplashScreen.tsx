@@ -9,12 +9,12 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
   // Memphis Design shapes data
   const memphisShapes = [
     { type: "circle", size: 120, x: "10%", y: "15%", color: "#3b82f6", delay: 0 },
-    { type: "triangle", size: 100, x: "85%", y: "20%", color: "#ec4899", delay: 0.1 },
+    { type: "triangle", size: 100, x: "85%", y: "20%", color: "#60a5fa", delay: 0.1 },
     { type: "square", size: 80, x: "15%", y: "75%", color: "#06b6d4", delay: 0.2 },
     { type: "circle", size: 60, x: "80%", y: "70%", color: "#f59e0b", delay: 0.3 },
     { type: "line", size: 150, x: "50%", y: "10%", color: "#8b5cf6", delay: 0.4 },
     { type: "dots", size: 70, x: "90%", y: "50%", color: "#10b981", delay: 0.5 },
-    { type: "zigzag", size: 90, x: "5%", y: "45%", color: "#f472b6", delay: 0.6 },
+    { type: "zigzag", size: 90, x: "5%", y: "45%", color: "#60a5fa", delay: 0.6 },
   ];
 
   const renderMemphisShape = (shape: any, index: number) => {
@@ -220,7 +220,7 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
               transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
             />
             <motion.div
-              className="absolute inset-2 rounded-full border-8 border-pink-400"
+              className="absolute inset-2 rounded-full border-8 border-blue-400"
               animate={{ rotate: -360 }}
               transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
             />
@@ -252,13 +252,13 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.6, duration: 0.8, type: "spring" }}
             style={{
-              textShadow: "4px 4px 0px rgba(236, 72, 153, 0.5), 8px 8px 0px rgba(59, 130, 246, 0.3)",
+              textShadow: "4px 4px 0px rgba(34, 211, 238, 0.5), 8px 8px 0px rgba(59, 130, 246, 0.3)",
             }}
           >
             Jelajah
           </motion.h1>
           <motion.h2
-            className="text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-200 via-cyan-300 to-pink-300 relative"
+            className="text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-200 via-cyan-300 to-blue-300 relative"
             initial={{ y: 30, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.8, duration: 0.8, type: "spring" }}
@@ -291,8 +291,8 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
               <div
                 className="w-4 h-4 rounded-full"
                 style={{
-                  backgroundColor: ["#3b82f6", "#ec4899", "#06b6d4"][i],
-                  boxShadow: `0 4px 12px ${["rgba(59, 130, 246, 0.5)", "rgba(236, 72, 153, 0.5)", "rgba(6, 182, 212, 0.5)"][i]}`,
+                  backgroundColor: ["#3b82f6", "#60a5fa", "#06b6d4"][i],
+                  boxShadow: `0 4px 12px ${["rgba(59, 130, 246, 0.5)", "rgba(96, 165, 250, 0.5)", "rgba(6, 182, 212, 0.5)"][i]}`,
                 }}
               />
             </motion.div>

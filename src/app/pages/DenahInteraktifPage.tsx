@@ -600,6 +600,13 @@ function FloorPlanView({
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartScrollRef = useRef<HTMLDivElement>(null);
   const isChartDraggingRef = useRef(false);
+  const zoomRef = useRef(1);
+  const pinchStateRef = useRef<{
+    startDistance: number;
+    startZoom: number;
+    contentX: number;
+    contentY: number;
+  } | null>(null);
   const dragStateRef = useRef({
     startX: 0,
     startY: 0,
@@ -634,6 +641,7 @@ function FloorPlanView({
     const contentX = (viewport.scrollLeft + pointX) / zoom;
     const contentY = (viewport.scrollTop + pointY) / zoom;
 
+    zoomRef.current = nextZoom;
     setZoom(nextZoom);
     requestAnimationFrame(() => {
       viewport.scrollLeft = contentX * nextZoom - pointX;
@@ -735,6 +743,72 @@ function FloorPlanView({
   }, [isChartFullscreen, loading]);
 
   useEffect(() => {
+    zoomRef.current = zoom;
+  }, [zoom]);
+
+  useEffect(() => {
+    const viewport = chartScrollRef.current;
+    if (!viewport || loading) return;
+
+    const distanceBetween = (first: Touch, second: Touch) =>
+      Math.hypot(second.clientX - first.clientX, second.clientY - first.clientY);
+
+    const handlePinchStart = (event: TouchEvent) => {
+      if (event.touches.length !== 2) return;
+      event.preventDefault();
+      const rect = viewport.getBoundingClientRect();
+      const centerX = (event.touches[0].clientX + event.touches[1].clientX) / 2 - rect.left;
+      const centerY = (event.touches[0].clientY + event.touches[1].clientY) / 2 - rect.top;
+      pinchStateRef.current = {
+        startDistance: distanceBetween(event.touches[0], event.touches[1]),
+        startZoom: zoomRef.current,
+        contentX: (viewport.scrollLeft + centerX) / zoomRef.current,
+        contentY: (viewport.scrollTop + centerY) / zoomRef.current,
+      };
+    };
+
+    const handlePinchMove = (event: TouchEvent) => {
+      const pinch = pinchStateRef.current;
+      if (!pinch || event.touches.length !== 2) return;
+      event.preventDefault();
+
+      const rect = viewport.getBoundingClientRect();
+      const centerX = (event.touches[0].clientX + event.touches[1].clientX) / 2 - rect.left;
+      const centerY = (event.touches[0].clientY + event.touches[1].clientY) / 2 - rect.top;
+      const nextZoom = Math.min(
+        3,
+        Math.max(
+          1,
+          pinch.startZoom *
+            (distanceBetween(event.touches[0], event.touches[1]) / pinch.startDistance),
+        ),
+      );
+
+      zoomRef.current = nextZoom;
+      setZoom(nextZoom);
+      requestAnimationFrame(() => {
+        viewport.scrollLeft = pinch.contentX * nextZoom - centerX;
+        viewport.scrollTop = pinch.contentY * nextZoom - centerY;
+      });
+    };
+
+    const endPinch = (event: TouchEvent) => {
+      if (event.touches.length < 2) pinchStateRef.current = null;
+    };
+
+    viewport.addEventListener("touchstart", handlePinchStart, { passive: false });
+    viewport.addEventListener("touchmove", handlePinchMove, { passive: false });
+    viewport.addEventListener("touchend", endPinch);
+    viewport.addEventListener("touchcancel", endPinch);
+    return () => {
+      viewport.removeEventListener("touchstart", handlePinchStart);
+      viewport.removeEventListener("touchmove", handlePinchMove);
+      viewport.removeEventListener("touchend", endPinch);
+      viewport.removeEventListener("touchcancel", endPinch);
+    };
+  }, [loading]);
+
+  useEffect(() => {
     setLoading(true);
     getSupabaseClient()
       .from("denah_ruangan")
@@ -778,16 +852,19 @@ function FloorPlanView({
         ) : (
           <div
             ref={chartContainerRef}
-            className={`denah-fullscreen-container relative mx-auto overflow-hidden ${
+            className={`denah-fullscreen-container relative mx-auto ${
               isPseudoFullscreen
-                ? "fixed inset-0 z-[100] max-w-none rounded-none"
-                : "max-w-4xl rounded-2xl"
+                ? "fixed inset-0 z-[100] max-w-none overflow-hidden rounded-none"
+                : "max-w-4xl overflow-visible rounded-2xl"
             } ${
               isDarkMode ? "bg-slate-950" : "bg-slate-100"
             }`}
           >
             <div
-              className={`absolute right-3 top-3 z-[70] flex items-center gap-1.5 rounded-2xl border p-1.5 shadow-xl backdrop-blur-md transition-colors ${
+              className={`${isChartFullscreen
+                ? "absolute right-3 top-3"
+                : "sticky top-[7.5rem] ml-auto mr-3 mb-[-3rem] w-fit"
+              } z-[70] flex items-center gap-1.5 rounded-2xl border p-1.5 shadow-xl backdrop-blur-md transition-colors ${
                 isDarkMode
                   ? "border-slate-700 bg-slate-800/90 text-white"
                   : "border-slate-200 bg-white/90 text-slate-700"
