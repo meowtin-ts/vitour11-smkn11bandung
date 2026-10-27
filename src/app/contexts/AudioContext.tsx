@@ -11,7 +11,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const audioUrl = "/CraveYou.mp3";
+  const audioUrl = "/Firasat-Marcell.mp3";
 
   // Handle play/pause
   useEffect(() => {
