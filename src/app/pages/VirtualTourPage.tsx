@@ -39,9 +39,6 @@ interface VirtualTour {
   }>;
   autoRotate?: boolean;
   compass?: boolean;
-  multiResBasePath?: string;
-  multiResMaxLevel?: number;
-  multiResCubeResolution?: number;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -243,19 +240,10 @@ export function VirtualTourPage() {
   }, []);
 
   useEffect(() => {
-    // Tunggu sampai loading screen selesai: panorama pertama baru diinisialisasi
-    // setelah container benar-benar tampil & ukurannya stabil.
-    if (!currentTour || !panoramaRef.current || !pannellumLoaded || preloading) return;
-
-    const timer = setTimeout(() => {
+    if (currentTour && panoramaRef.current && pannellumLoaded) {
       initPannellum();
-    }, 50);
+    }
 
-    return () => clearTimeout(timer);
-  }, [currentTour?.id, pannellumLoaded, preloading]);
-
-  // Destroy viewer hanya saat halaman ditinggalkan
-  useEffect(() => {
     return () => {
       if (viewerRef.current) {
         try {
@@ -263,10 +251,9 @@ export function VirtualTourPage() {
         } catch (e) {
           console.error("Error destroying viewer:", e);
         }
-        viewerRef.current = null;
       }
     };
-  }, []);
+  }, [currentTour, pannellumLoaded]);
 
   const fetchTours = async () => {
     try {
@@ -310,9 +297,6 @@ export function VirtualTourPage() {
         },
         autoRotate: row.auto_rotate,
         compass: row.compass,
-        multiResBasePath: row.multi_res_base_path || undefined,
-        multiResMaxLevel: row.multi_res_max_level || undefined,
-        multiResCubeResolution: row.multi_res_cube_resolution || undefined,
         hotspots: row.hotspots || [],
         createdAt: row.created_at,
         updatedAt: row.updated_at,
@@ -385,11 +369,6 @@ export function VirtualTourPage() {
       }
     }
 
-    if (typeof window.pannellum?.viewer !== "function") {
-      console.error("Pannellum belum siap: window.pannellum tidak tersedia");
-      return;
-    }
-
     try {
       // Prepare hot spots with click handlers
       const hotspots = (currentTour.hotspots || []).map((hs: any) => {
@@ -410,59 +389,85 @@ export function VirtualTourPage() {
           cssClass: hs.type === "scene" ? "hotspot-scene" : "hotspot-info",
         };
 
-        // Custom tooltip: append visible icon inside the hotspot div
+        const isScene = hs.type === 'scene';
+
+        // Custom icon rendering dengan SVG
         hotspotConfig.createTooltipFunc = (hotSpotDiv: HTMLElement) => {
-          // Color: Scene = Blue, Info = Green
-          const isScene = hs.type === 'scene';
-          const bgColor = isScene ? 'rgba(59,130,246,0.92)' : 'rgba(34,197,94,0.92)';
-          const glowColor = isScene ? 'rgba(59,130,246,0.4)' : 'rgba(34,197,94,0.4)';
+          // PENTING: jangan ubah position hotSpotDiv (harus tetap absolute milik Pannellum),
+          // ubah ke relative membuat pin jatuh keluar viewport.
+          hotSpotDiv.innerHTML = '';
 
-          // Build a clickable icon wrapper
-          const wrapper = document.createElement('div');
-          wrapper.style.cssText = `width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:${bgColor};box-shadow:0 2px 10px ${glowColor};cursor:pointer;border:2.5px solid rgba(255,255,255,0.85);transition:transform .2s;`;
+          // Wrapper icon 24x24 (biru = scene, hijau = info)
+          const iconContainer = document.createElement('div');
+          iconContainer.className = 'hotspot-icon-container';
+          iconContainer.style.cssText = `position:relative;width:24px;height:24px;box-sizing:border-box;border-radius:50%;display:flex;align-items:center;justify-content:center;background:${isScene ? 'rgba(59,130,246,0.92)' : 'rgba(34,197,94,0.92)'};box-shadow:0 2px 10px ${isScene ? 'rgba(59,130,246,0.4)' : 'rgba(34,197,94,0.4)'};cursor:pointer;border:2.5px solid rgba(255,255,255,0.85);transition:transform .2s;`;
 
-          // SVG icon
-          const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-          svg.setAttribute('width', '12');
-          svg.setAttribute('height', '12');
-          svg.setAttribute('viewBox', '0 0 24 24');
-          svg.setAttribute('fill', 'none');
-          svg.setAttribute('stroke', 'white');
-          svg.setAttribute('stroke-width', '2.5');
-          svg.setAttribute('stroke-linecap', 'round');
-          svg.setAttribute('stroke-linejoin', 'round');
+          // Pulse ring di belakang ikon
+          const pulse = document.createElement('div');
+          pulse.style.cssText = `position:absolute;inset:0;border-radius:50%;background:${isScene ? 'rgba(59,130,246,0.45)' : 'rgba(34,197,94,0.45)'};pointer-events:none;animation:hotspot-pulse 2s ease-out infinite;`;
+          iconContainer.appendChild(pulse);
+
+          // SVG icon 12x12
+          const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+          icon.setAttribute('width', '12');
+          icon.setAttribute('height', '12');
+          icon.setAttribute('viewBox', '0 0 24 24');
+          icon.setAttribute('fill', 'none');
+          icon.setAttribute('stroke', 'white');
+          icon.setAttribute('stroke-width', '2.5');
+          icon.setAttribute('stroke-linecap', 'round');
+          icon.setAttribute('stroke-linejoin', 'round');
 
           if (isScene) {
-            // Biru: MapPin icon untuk navigasi antar panorama
-            svg.innerHTML = '<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>';
+            // MapPin icon untuk scene (navigasi antar panorama)
+            icon.innerHTML = '<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle>';
           } else {
-            // Hijau: Compass/Navigation icon untuk info
-            svg.innerHTML = '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>';
+            // AlertCircle icon untuk info
+            icon.innerHTML = '<circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line>';
           }
-          wrapper.appendChild(svg);
+          iconContainer.appendChild(icon);
 
-          // Tooltip label on hover
+          // Tooltip text (muncul saat hover)
           if (hs.text) {
-            const label = document.createElement('div');
-            label.textContent = hs.text;
-            label.style.cssText = 'position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);padding:5px 10px;background:rgba(15,23,42,0.92);color:#fff;border-radius:6px;font-size:13px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .2s;';
-            wrapper.appendChild(label);
-            wrapper.addEventListener('mouseenter', () => { label.style.opacity = '1'; wrapper.style.transform = 'scale(1.12)'; });
-            wrapper.addEventListener('mouseleave', () => { label.style.opacity = '0'; wrapper.style.transform = 'scale(1)'; });
+            const tooltip = document.createElement('div');
+            tooltip.className = 'hotspot-tooltip-text';
+            tooltip.textContent = hs.text;
+            tooltip.style.cssText = `
+              position: absolute;
+              bottom: 100%;
+              left: 50%;
+              transform: translateX(-50%);
+              margin-bottom: 8px;
+              padding: 6px 10px;
+              background: ${isDarkMode ? 'rgba(30, 41, 59, 0.95)' : 'rgba(15, 23, 42, 0.95)'};
+              color: white;
+              border-radius: 8px;
+              font-size: 13px;
+              white-space: nowrap;
+              opacity: 0;
+              pointer-events: none;
+              transition: opacity 0.2s ease;
+              box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+              z-index: 1000;
+            `;
+            iconContainer.appendChild(tooltip);
+
+            iconContainer.addEventListener('mouseenter', () => {
+              tooltip.style.opacity = '1';
+              iconContainer.style.transform = 'scale(1.15)';
+            });
+
+            iconContainer.addEventListener('mouseleave', () => {
+              tooltip.style.opacity = '0';
+              iconContainer.style.transform = 'scale(1)';
+            });
           }
 
-          hotSpotDiv.appendChild(wrapper);
+          hotSpotDiv.appendChild(iconContainer);
         };
 
-        // Add click handler using Pannellum's official API
         if (hs.type === "scene" && hs.targetId) {
-          hotspotConfig.clickHandlerFunc = () => {
-            loadScene(hs.targetId);
-          };
-        } else if (hs.type === "info") {
-          hotspotConfig.clickHandlerFunc = () => {
-            console.log("ℹ️ Info hotspot clicked:", hs.text || "Informasi");
-          };
+          hotspotConfig.clickHandlerFunc = () => loadScene(hs.targetId);
         }
 
         return hotspotConfig;

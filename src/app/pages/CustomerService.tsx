@@ -87,21 +87,13 @@ export function CustomerService() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {services.map((service, index) => {
               const Icon = service.icon;
-              const CardWrapper = service.isExternal ? 'a' : Link;
-              const cardProps = service.isExternal
-                ? { href: service.link, target: "_blank", rel: "noopener noreferrer" }
-                : { to: service.link };
-
-              return (
-                <CardWrapper
-                  key={index}
-                  {...cardProps}
-                  className={`group p-6 rounded-2xl transition-all duration-300 border ${
+              const cardClassName = `group p-6 rounded-2xl transition-all duration-300 border ${
                     isDarkMode
                       ? "bg-slate-800 border-slate-700 hover:border-slate-600"
                       : "bg-white border-slate-200 hover:border-slate-300"
-                  } hover:shadow-2xl hover:-translate-y-1`}
-                >
+                  } hover:shadow-2xl hover:-translate-y-1`;
+              const cardContent = (
+                <>
                   <div className={`inline-flex p-4 rounded-2xl mb-5 transition-colors ${service.bgColor}`}>
                     <Icon className={`w-8 h-8 ${service.iconColor}`} />
                   </div>
@@ -120,7 +112,23 @@ export function CustomerService() {
                     </span>
                     <ChevronRight className={`w-4 h-4 ${service.iconColor}`} />
                   </div>
-                </CardWrapper>
+                </>
+              );
+
+              return service.isExternal ? (
+                <a
+                  key={index}
+                  href={service.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={cardClassName}
+                >
+                  {cardContent}
+                </a>
+              ) : (
+                <Link key={index} to={service.link} className={cardClassName}>
+                  {cardContent}
+                </Link>
               );
             })}
           </div>

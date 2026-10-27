@@ -2,14 +2,11 @@ import { createClient } from "@supabase/supabase-js";
 import { projectId, publicAnonKey } from "./info";
 
 // Singleton instance to avoid multiple GoTrueClient instances
-let supabaseInstance: ReturnType<typeof createClient> | null = null;
+const supabaseInstance = createClient(
+  `https://${projectId}.supabase.co`,
+  publicAnonKey
+);
 
 export function getSupabaseClient() {
-  if (!supabaseInstance) {
-    supabaseInstance = createClient(
-      `https://${projectId}.supabase.co`,
-      publicAnonKey
-    );
-  }
   return supabaseInstance;
 }

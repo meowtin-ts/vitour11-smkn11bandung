@@ -145,6 +145,7 @@ function RoomFormModal({
       } else {
         const { data, error } = await sb.from("denah_ruangan").insert(payload).select("id").single();
         if (error) throw error;
+        if (!data) throw new Error("Data ruangan tidak ditemukan setelah disimpan");
         roomId = data.id;
       }
 

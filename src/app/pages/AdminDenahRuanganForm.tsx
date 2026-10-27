@@ -191,6 +191,7 @@ export function AdminDenahRuanganForm() {
       } else {
         const { data, error } = await getSupabaseClient().from("denah_ruangan").insert(payload).select("id").single();
         if (error) throw error;
+        if (!data) throw new Error("Data ruangan tidak ditemukan setelah disimpan");
         roomId = data.id;
       }
 
@@ -199,24 +200,45 @@ export function AdminDenahRuanganForm() {
         ? Math.max(...existingPhotos.map((p) => p.urutan))
         : -1;
 
+      let photoErrors = 0;
       for (let i = 0; i < newFiles.length; i++) {
         const file = newFiles[i];
-        const ext = file.name.split(".").pop();
+        const ext = file.name.split(".").pop() ?? "jpg";
         const path = `${roomId}/${Date.now()}-${i}.${ext}`;
-        const { error: upErr } = await getSupabaseClient().storage.from(BUCKET).upload(path, file, { upsert: false });
-        if (upErr) { toast.error(`Gagal upload foto ${i + 1}`); continue; }
+
+        const { error: upErr } = await getSupabaseClient().storage
+          .from(BUCKET)
+          .upload(path, file, { upsert: false });
+
+        if (upErr) {
+          console.error(`Upload foto ${i + 1} gagal:`, upErr.message);
+          photoErrors++;
+          continue;
+        }
 
         const { data: urlData } = getSupabaseClient().storage.from(BUCKET).getPublicUrl(path);
-        await getSupabaseClient().from("denah_ruangan_foto").insert({
+        const { error: dbErr } = await getSupabaseClient().from("denah_ruangan_foto").insert({
           ruangan_id: roomId,
           foto_url: urlData.publicUrl,
           storage_path: path,
           urutan: currentMaxUrutan + 1 + i,
         });
+
+        if (dbErr) {
+          console.error(`Insert foto ${i + 1} ke DB gagal:`, dbErr.message);
+          photoErrors++;
+        }
       }
 
-      toast.success(isEdit ? "Ruangan berhasil diperbarui" : "Ruangan berhasil ditambahkan");
-      navigate("/admin-dashboard/denah-ruangan");
+      if (photoErrors > 0) {
+        toast.error(
+          `${photoErrors} foto gagal diupload. Pastikan bucket "denah-ruangan" di Supabase Storage sudah memiliki policy INSERT publik.`,
+          { duration: 8000 }
+        );
+      } else {
+        toast.success(isEdit ? "Ruangan berhasil diperbarui" : "Ruangan berhasil ditambahkan");
+        navigate("/admin-dashboard/denah-ruangan");
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Terjadi kesalahan";
       toast.error(`Gagal menyimpan: ${msg}`);
