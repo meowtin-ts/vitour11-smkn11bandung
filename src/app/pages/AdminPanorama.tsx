@@ -50,18 +50,17 @@ interface VirtualTour {
   updatedAt: string;
 }
 
-// Format hotspot di editor canvas (persis seperti tipe Hotspot di HotspotCanvas)
-interface CanvasHotspot {
+interface EditorHotspot {
   id: number;
-  x: number; // Posisi X dalam % (0-100)
-  y: number; // Posisi Y dalam % (0-100)
+  x: number;
+  y: number;
   type: "scene" | "info";
   text: string;
   targetId: string | null;
 }
 
 type EditingTour = Omit<Partial<VirtualTour>, "hotspots"> & {
-  hotspots?: CanvasHotspot[];
+  hotspots?: EditorHotspot[];
 };
 
 export function AdminPanorama() {
@@ -76,7 +75,7 @@ export function AdminPanorama() {
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [filterMenu, setFilterMenu] = useState<"all" | "visible" | "hidden" | "autoRotate" | "compass">("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const PAGE_SIZE = 10;
+  const PAGE_SIZE = 9;
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   useEffect(() => {
@@ -167,7 +166,7 @@ export function AdminPanorama() {
 
   const handleEdit = (tour: VirtualTour) => {
     // Convert hotspots from pitch/yaw (from database) to x/y percentages (for canvas)
-    const convertedTour: EditingTour = {
+    const convertedTour = {
       ...tour,
       hotspots: (tour.hotspots || []).map((hs: any) => ({
         id: Date.now() + Math.random(), // Generate unique ID for editing
@@ -708,7 +707,7 @@ export function AdminPanorama() {
                 />
               </div>
 
-{/* Features */}
+              {/* Features */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
