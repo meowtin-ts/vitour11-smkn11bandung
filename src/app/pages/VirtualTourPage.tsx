@@ -397,26 +397,28 @@ export function VirtualTourPage() {
           // ubah ke relative membuat pin jatuh keluar viewport.
           hotSpotDiv.innerHTML = '';
 
-          // Wrapper icon 24x24 (biru = scene, hijau = info)
+          // Pin biru (scene maupun info), ukuran tetap 28px di semua kondisi zoom
           const iconContainer = document.createElement('div');
           iconContainer.className = 'hotspot-icon-container';
-          iconContainer.style.cssText = `position:relative;width:24px;height:24px;box-sizing:border-box;border-radius:50%;display:flex;align-items:center;justify-content:center;background:${isScene ? 'rgba(59,130,246,0.92)' : 'rgba(34,197,94,0.92)'};box-shadow:0 2px 10px ${isScene ? 'rgba(59,130,246,0.4)' : 'rgba(34,197,94,0.4)'};cursor:pointer;border:2.5px solid rgba(255,255,255,0.85);transition:transform .2s;`;
+          iconContainer.style.cssText = `position:relative;width:28px;height:28px;box-sizing:border-box;border-radius:50%;display:flex;align-items:center;justify-content:center;background:${isDarkMode ? 'rgba(59,130,246,0.9)' : 'rgba(59,130,246,0.95)'};box-shadow:0 4px 12px rgba(0,0,0,0.3);cursor:pointer;border:${isDarkMode ? '2px solid rgba(147,197,253,0.5)' : '2px solid rgba(255,255,255,0.9)'};transition:transform .2s;`;
 
-          // Pulse ring di belakang ikon
+          // Pulse ring di belakang ikon, mengikuti ukuran penuh pin
           const pulse = document.createElement('div');
-          pulse.style.cssText = `position:absolute;inset:0;border-radius:50%;background:${isScene ? 'rgba(59,130,246,0.45)' : 'rgba(34,197,94,0.45)'};pointer-events:none;animation:hotspot-pulse 2s ease-out infinite;`;
+          pulse.style.cssText = `position:absolute;width:100%;height:100%;border-radius:50%;background:${isDarkMode ? 'rgba(59,130,246,0.4)' : 'rgba(59,130,246,0.5)'};pointer-events:none;animation:hotspot-pulse 2s ease-out infinite;`;
           iconContainer.appendChild(pulse);
 
-          // SVG icon 12x12
+          // SVG icon tetap 14x14 dengan viewBox 24
           const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-          icon.setAttribute('width', '12');
-          icon.setAttribute('height', '12');
+          icon.setAttribute('width', '14');
+          icon.setAttribute('height', '14');
           icon.setAttribute('viewBox', '0 0 24 24');
           icon.setAttribute('fill', 'none');
           icon.setAttribute('stroke', 'white');
           icon.setAttribute('stroke-width', '2.5');
           icon.setAttribute('stroke-linecap', 'round');
           icon.setAttribute('stroke-linejoin', 'round');
+          icon.style.position = 'relative';
+          icon.style.zIndex = '1'; // agar ikon putih tetap di atas pulse
 
           if (isScene) {
             // MapPin icon untuk scene (navigasi antar panorama)
@@ -438,11 +440,11 @@ export function VirtualTourPage() {
               left: 50%;
               transform: translateX(-50%);
               margin-bottom: 8px;
-              padding: 6px 10px;
+              padding: 8px 12px;
               background: ${isDarkMode ? 'rgba(30, 41, 59, 0.95)' : 'rgba(15, 23, 42, 0.95)'};
               color: white;
               border-radius: 8px;
-              font-size: 13px;
+              font-size: 14px;
               white-space: nowrap;
               opacity: 0;
               pointer-events: none;
@@ -451,17 +453,19 @@ export function VirtualTourPage() {
               z-index: 1000;
             `;
             iconContainer.appendChild(tooltip);
-
-            iconContainer.addEventListener('mouseenter', () => {
-              tooltip.style.opacity = '1';
-              iconContainer.style.transform = 'scale(1.15)';
-            });
-
-            iconContainer.addEventListener('mouseleave', () => {
-              tooltip.style.opacity = '0';
-              iconContainer.style.transform = 'scale(1)';
-            });
           }
+
+          // Hover: pin membesar 1.15x dari ukuran dasarnya, tooltip muncul bila ada
+          const tooltipEl = iconContainer.querySelector<HTMLElement>('.hotspot-tooltip-text');
+          iconContainer.addEventListener('mouseenter', () => {
+            iconContainer.style.transform = 'scale(1.15)';
+            if (tooltipEl) tooltipEl.style.opacity = '1';
+          });
+
+          iconContainer.addEventListener('mouseleave', () => {
+            iconContainer.style.transform = 'scale(1)';
+            if (tooltipEl) tooltipEl.style.opacity = '0';
+          });
 
           hotSpotDiv.appendChild(iconContainer);
         };
