@@ -500,12 +500,18 @@ export function AdminPanorama() {
                       className="w-full h-full object-cover"
                       onError={(e) => {
                         // Fallback jika gambar gagal load
-                        e.currentTarget.style.display = 'none';
-                        e.currentTarget.parentElement!.querySelector('.fallback-icon')?.classList.remove('hidden');
+                        e.currentTarget.style.display = "none";
+                        const fallbackIcon = e.currentTarget.parentElement?.querySelector(".fallback-icon");
+                        fallbackIcon?.classList.remove("hidden");
+                        fallbackIcon?.classList.add("flex");
                       }}
                     />
                   ) : null}
-                  <div className="fallback-icon w-full h-full flex items-center justify-center absolute inset-0 hidden">
+                  <div
+                    className={`fallback-icon absolute inset-0 h-full w-full items-center justify-center ${
+                      tour.panoramaUrl ? "hidden" : "flex"
+                    }`}
+                  >
                     <ImageIcon className="w-16 h-16 text-white/50" />
                   </div>
                   <div className="absolute top-3 right-3 bg-black/50 backdrop-blur-sm px-3 py-1 rounded-full text-white text-sm">
