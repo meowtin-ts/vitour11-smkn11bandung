@@ -397,14 +397,14 @@ export function VirtualTourPage() {
           // ubah ke relative membuat pin jatuh keluar viewport.
           hotSpotDiv.innerHTML = '';
 
-          // Pin biru (scene maupun info), ukuran tetap 28px di semua kondisi zoom
+          // Pin biru untuk scene, hijau untuk info, ukuran tetap 28px di semua kondisi zoom
           const iconContainer = document.createElement('div');
           iconContainer.className = 'hotspot-icon-container';
-          iconContainer.style.cssText = `position:relative;width:28px;height:28px;box-sizing:border-box;border-radius:50%;display:flex;align-items:center;justify-content:center;background:${isDarkMode ? 'rgba(59,130,246,0.9)' : 'rgba(59,130,246,0.95)'};box-shadow:0 4px 12px rgba(0,0,0,0.3);cursor:pointer;border:${isDarkMode ? '2px solid rgba(147,197,253,0.5)' : '2px solid rgba(255,255,255,0.9)'};transition:transform .2s;`;
+          iconContainer.style.cssText = `position:relative;width:28px;height:28px;box-sizing:border-box;border-radius:50%;display:flex;align-items:center;justify-content:center;background:${isScene ? (isDarkMode ? 'rgba(59,130,246,0.9)' : 'rgba(59,130,246,0.95)') : (isDarkMode ? 'rgba(34,197,94,0.9)' : 'rgba(34,197,94,0.95)')};box-shadow:0 4px 12px rgba(0,0,0,0.3);cursor:pointer;border:${isDarkMode ? '2px solid rgba(147,197,253,0.5)' : '2px solid rgba(255,255,255,0.9)'};transition:transform .2s;`;
 
           // Pulse ring di belakang ikon, mengikuti ukuran penuh pin
           const pulse = document.createElement('div');
-          pulse.style.cssText = `position:absolute;width:100%;height:100%;border-radius:50%;background:${isDarkMode ? 'rgba(59,130,246,0.4)' : 'rgba(59,130,246,0.5)'};pointer-events:none;animation:hotspot-pulse 2s ease-out infinite;`;
+          pulse.style.cssText = `position:absolute;width:100%;height:100%;border-radius:50%;background:${isScene ? (isDarkMode ? 'rgba(59,130,246,0.4)' : 'rgba(59,130,246,0.5)') : (isDarkMode ? 'rgba(34,197,94,0.4)' : 'rgba(34,197,94,0.5)')};pointer-events:none;animation:hotspot-pulse 2s ease-out infinite;`;
           iconContainer.appendChild(pulse);
 
           // SVG icon tetap 14x14 dengan viewBox 24
